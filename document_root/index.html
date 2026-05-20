@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mantrail App</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div id="app">
+
+    <div id="snackbar"></div>
+
+    <!-- LOGIN -->
+    <div id="login-page" class="page active" data-client-id="">
+      <h1>Mantrail Tracker</h1>
+      <p>Real-time mantrailing session management</p>
+      <div id="google-signin-btn"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-page" class="page">
+      <div class="top-bar">
+        <h1>Sessions</h1>
+        <div class="user-info">
+          <span id="user-name"></span>
+          <button class="btn btn-sm btn-secondary" id="logout-btn">Sign Out</button>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:16px">
+        <button class="btn" id="create-session-btn">+ New Session</button>
+        <button class="btn btn-secondary" id="join-session-btn">Join with Code</button>
+      </div>
+      <div id="session-list"></div>
+    </div>
+
+    <!-- SESSION -->
+    <div id="session-page" class="page">
+      <div class="top-bar">
+        <div>
+          <h1 id="session-title"></h1>
+          <span style="font-size:13px;color:#777">
+            Code: <strong id="session-code"></strong>
+            <button class="btn btn-sm btn-secondary" id="copy-code-btn" style="margin-left:8px">Copy</button>
+          </span>
+        </div>
+        <button class="btn btn-sm btn-secondary" id="back-to-dashboard">Back</button>
+      </div>
+
+      <div id="member-list"></div>
+
+      <div id="your-role" style="font-size:14px;margin-bottom:8px"></div>
+
+      <div id="action-buttons" style="display:none">
+        <div id="session-toolbar">
+          <button class="btn btn-sm btn-secondary" id="role-passive-btn">Be Passive Member</button>
+          <button class="btn btn-sm" id="role-lost-btn">Be Lost Person</button>
+          <button class="btn btn-sm" id="role-handler-btn">Be Dog Handler</button>
+          <button class="btn btn-sm btn-success" id="show-summary-btn">Summary</button>
+        </div>
+
+        <div id="hiding-controls" class="row" style="display:none;margin-bottom:8px">
+          <button class="btn btn-sm" id="start-hiding-btn">Start Hiding</button>
+          <button class="btn btn-sm btn-danger" id="im-hidden-btn">I'm Hidden</button>
+        </div>
+
+        <div id="search-controls" class="row" style="display:none;margin-bottom:8px">
+          <button class="btn btn-sm" id="start-search-btn">Start Search</button>
+          <button class="btn btn-sm btn-success" id="found-btn">Found!</button>
+          <button class="btn btn-sm btn-danger" id="fail-btn">Failed</button>
+        </div>
+      </div>
+
+      <div id="route-draw-section" style="display:none;margin-bottom:12px">
+        <div id="route-draw-panel">
+          <strong>Assign Route</strong>
+          <div class="row" style="margin-top:8px;align-items:center">
+            <select id="route-target-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ddd">
+              <option value="">Select member...</option>
+            </select>
+            <button class="btn btn-sm btn-secondary" id="toggle-draw-btn">Draw Route</button>
+            <button class="btn btn-sm btn-success" id="assign-route-btn" disabled>Assign</button>
+          </div>
+          <div style="margin-top:6px;font-size:13px;color:#666">
+            <span id="waypoint-count">0 points</span>
+            &middot;
+            <label><input type="checkbox" id="snap-toggle"> Snap to roads</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="session-map" style="height:60vh;border-radius:12px"></div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div id="summary-page" class="page">
+      <div class="top-bar">
+        <h1 id="summary-title"></h1>
+      </div>
+      <div id="summary-map" style="height:50vh;border-radius:12px;margin-bottom:16px"></div>
+      <div id="summary-content"></div>
+    </div>
+
+  </div>
+
+  <script src="api.js"></script>
+  <script src="ws.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
