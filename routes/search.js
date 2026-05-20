@@ -48,6 +48,10 @@ router.post('/:id/search-result', (req, res) => {
 
   q.updateSearchEnd.run(endedAt, wpStr, result, durationSec, search.id);
 
+  if (result === 'found') {
+    q.updateSessionStatus.run('completed', session.id);
+  }
+
   broadcastToSession(session.id, { type: 'search_ended', userId: req.user.userId, result });
 
   res.json({ success: true, duration_seconds: durationSec });

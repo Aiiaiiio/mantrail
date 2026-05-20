@@ -18,7 +18,7 @@
     <div id="login-page" class="page active" data-client-id="">
       <h1>Mantrail Tracker</h1>
       <p>Real-time mantrailing session management</p>
-      <div id="google-signin-btn"></div>
+      <button class="btn" id="google-signin-btn" style="font-size:16px;padding:12px 32px">Sign in with Google</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -59,7 +59,8 @@
           <button class="btn btn-sm btn-secondary" id="role-passive-btn">Be Passive Member</button>
           <button class="btn btn-sm" id="role-lost-btn">Be Lost Person</button>
           <button class="btn btn-sm" id="role-handler-btn">Be Dog Handler</button>
-          <button class="btn btn-sm btn-success" id="show-summary-btn">Summary</button>
+          <button class="btn btn-sm btn-secondary" id="show-summary-btn">View Summary</button>
+          <button class="btn btn-sm btn-danger" id="end-session-btn">End Session</button>
         </div>
 
         <div id="hiding-controls" class="row" style="display:none;margin-bottom:8px">
@@ -72,6 +73,10 @@
           <button class="btn btn-sm btn-success" id="found-btn">Found!</button>
           <button class="btn btn-sm btn-danger" id="fail-btn">Failed</button>
         </div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <button class="btn btn-sm btn-secondary" id="jump-to-location-btn">Jump to my location</button>
       </div>
 
       <div id="route-draw-section" style="display:none;margin-bottom:12px">

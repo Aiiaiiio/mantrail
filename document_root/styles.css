@@ -88,6 +88,21 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 
 .empty-state { text-align: center; padding: 40px; color: #999; }
 
+.user-marker {
+  background: none !important;
+  border: none !important;
+}
+.user-marker span {
+  display: flex; width: 32px; height: 32px; border-radius: 50%;
+  align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: bold;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.user-marker img {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
 @media (max-width: 600px) {
   .page { padding: 12px; }
   #login-page { padding-top: 80px; }

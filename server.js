@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +25,7 @@ app.use('/static', express.static(path.resolve(__dirname, 'static')));
 
 const staticHandler = serveStatic(path.resolve(__dirname, 'document_root'));
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
+  if (req.path.startsWith('/api/')) return next();
   staticHandler(req, res, () => {
     res.statusCode = 404;
     res.end('Not Found');

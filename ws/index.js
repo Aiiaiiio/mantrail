@@ -100,6 +100,7 @@ function setupWebSocket(server) {
               lat: data.lat,
               lng: data.lng,
               name: data.name || decoded.name,
+              avatar_url: data.avatar_url || decoded.avatar_url || '',
             };
 
             if (ws.role === 'lost_person') {
@@ -108,6 +109,7 @@ function setupWebSocket(server) {
               broadcastToSession(ws.sessionId, locMsg);
             }
 
+            ws.send(JSON.stringify(locMsg));
             ws.send(JSON.stringify({ type: 'location_ack', userId: ws.userId }));
             break;
           }

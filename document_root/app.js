@@ -74,28 +74,42 @@ const App = {
   async renderLogin() {
     try {
       const config = await fetch('/api/config').then(r => r.json());
-      if (config.googleClientId) {
-        document.getElementById('login-page').dataset.clientId = config.googleClientId;
+      const clientId = config.googleClientId;
+      if (clientId) {
+        document.getElementById('login-page').dataset.clientId = clientId;
       }
     } catch (e) {}
 
     const clientId = document.getElementById('login-page').dataset.clientId;
-    if (!clientId) return;
+    if (!clientId) {
+      this.showSnackbar('Google Client ID not configured');
+      return;
+    }
 
     const btn = document.getElementById('google-signin-btn');
-    if (btn && window.google?.accounts?.id) {
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: this.handleGoogleSignIn.bind(this),
-      });
-      google.accounts.id.renderButton(btn, { theme: 'outline', size: 'large', width: 300 });
-      google.accounts.id.prompt();
+    if (!btn) return;
+
+    if (!window.google?.accounts?.oauth2) {
+      setTimeout(() => this.renderLogin(), 500);
+      return;
     }
+
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'openid email profile',
+      callback: (response) => {
+        if (response.access_token) {
+          this.handleGoogleSignIn(response.access_token);
+        }
+      },
+    });
+
+    btn.onclick = () => this.tokenClient.requestAccessToken();
   },
 
-  async handleGoogleSignIn(response) {
+  async handleGoogleSignIn(accessToken) {
     try {
-      const user = await API.googleLogin(response.credential);
+      const user = await API.googleLogin(accessToken);
       this.currentUser = user;
       this.nav('dashboard');
       this.showSnackbar(`Signed in as ${user.name}`);
@@ -172,6 +186,14 @@ const App = {
       const res = await API.getSession(sessionId);
       this.currentSession = res.session;
       this.currentSessionData = res;
+
+      if (res.session.status === 'completed') {
+        this.cleanupSession();
+        WS.disconnect();
+        this.nav('summary', { id: sessionId });
+        return;
+      }
+
       this.renderSessionUI(res);
       this.setupSessionMap();
       this.connectWS(sessionId);
@@ -223,33 +245,52 @@ const App = {
 
     document.getElementById('start-hiding-btn').onclick = () => API.startHiding(session.id).then(() => {
       this.showSnackbar('Hiding started! Walk to your hiding spot.');
-      this.startLocationTracking('hiding');
+      this.startPathTracking('hiding');
     }).catch(e => this.showSnackbar(e.message));
 
     document.getElementById('im-hidden-btn').onclick = () => API.imHidden(session.id, { waypoints: this.trackedWaypoints }).then(() => {
       this.showSnackbar('You are hidden! Waiting for search.');
-      this.stopLocationTracking();
+      this.stopAllTracking();
     }).catch(e => this.showSnackbar(e.message));
 
     document.getElementById('start-search-btn').onclick = () => API.startSearch(session.id).then(() => {
       this.showSnackbar('Search started!');
-      this.startLocationTracking('search');
+      this.startPathTracking('search');
     }).catch(e => this.showSnackbar(e.message));
 
     document.getElementById('found-btn').onclick = () => API.searchResult(session.id, 'found', { waypoints: this.trackedWaypoints }).then(() => {
       this.showSnackbar('Person found! Session complete.');
-      this.stopLocationTracking();
+      this.stopAllTracking();
     }).catch(e => this.showSnackbar(e.message));
 
     document.getElementById('fail-btn').onclick = () => API.searchResult(session.id, 'failed', { waypoints: this.trackedWaypoints }).then(() => {
       this.showSnackbar('Search failed.');
-      this.stopLocationTracking();
+      this.stopAllTracking();
     }).catch(e => this.showSnackbar(e.message));
+
+    document.getElementById('end-session-btn').onclick = async () => {
+      if (!confirm('End this session? Everyone will be redirected to the summary.')) return;
+      try {
+        await API.endSession(session.id);
+        const sid = session.id;
+        this.cleanupSession();
+        WS.disconnect();
+        this.nav('summary', { id: sid });
+      } catch (e) {
+        this.showSnackbar(e.message);
+      }
+    };
 
     document.getElementById('show-summary-btn').onclick = () => {
       this.cleanupSession();
       WS.disconnect();
       this.nav('summary', { id: session.id });
+    };
+
+    document.getElementById('jump-to-location-btn').onclick = () => {
+      if (this.map) {
+        this.map.locate({ setView: true, maxZoom: 16 });
+      }
     };
 
     this.renderMembers(members);
@@ -268,21 +309,40 @@ const App = {
         <span class="role-badge">${m.role}</span>
       </div>
     `).join('');
+
+    const select = document.getElementById('route-target-select');
+    if (select) {
+      const currentVal = select.value;
+      select.innerHTML = members
+        .filter(m => m.id !== this.currentUser.id)
+        .map(m => `<option value="${m.id}">${m.name}</option>`)
+        .join('');
+      if (currentVal && members.some(m => m.id === currentVal)) {
+        select.value = currentVal;
+      }
+    }
   },
 
   updateSessionUI() {
     if (!this.currentSessionData) return;
-    const { members } = this.currentSessionData;
+    const { members, session } = this.currentSessionData;
     const me = members.find(m => m.id === this.currentUser.id);
     const isLost = me?.role === 'lost_person';
     const isHandler = me?.role === 'dog_handler';
+    const isMaster = me?.role === 'session_master';
+    const isCompleted = session?.status === 'completed';
 
-    document.getElementById('role-passive-btn').style.display = me?.role !== 'passive_member' ? '' : 'none';
-    document.getElementById('role-lost-btn').style.display = !isLost ? '' : 'none';
-    document.getElementById('role-handler-btn').style.display = !isHandler ? '' : 'none';
+    const hasLostPerson = members.some(m => m.role === 'lost_person');
+    const hasHandler = members.some(m => m.role === 'dog_handler');
 
-    document.getElementById('hiding-controls').style.display = isLost ? 'flex' : 'none';
-    document.getElementById('search-controls').style.display = isHandler ? 'flex' : 'none';
+    document.getElementById('role-passive-btn').style.display = !isCompleted && me?.role !== 'passive_member' ? '' : 'none';
+    document.getElementById('role-lost-btn').style.display = !isCompleted && !isLost && !hasLostPerson ? '' : 'none';
+    document.getElementById('role-handler-btn').style.display = !isCompleted && !isHandler && !hasHandler ? '' : 'none';
+    document.getElementById('end-session-btn').style.display = isMaster && !isCompleted ? '' : 'none';
+    document.getElementById('show-summary-btn').style.display = isCompleted ? '' : 'none';
+
+    document.getElementById('hiding-controls').style.display = !isCompleted && isLost ? 'flex' : 'none';
+    document.getElementById('search-controls').style.display = !isCompleted && isHandler ? 'flex' : 'none';
 
     document.getElementById('your-role').textContent = `Your role: ${me?.role || 'none'}`;
     this.renderMembers(members);
@@ -323,6 +383,8 @@ const App = {
       if (data.hiding) this.drawPath('hiding', JSON.parse(data.hiding.waypoints || '[]'));
       if (data.hidden) this.drawPath('hidden', JSON.parse(data.hidden.waypoints || '[]'));
       if (data.search) this.drawPath('search', JSON.parse(data.search.waypoints || '[]'));
+
+      this.startLocationUpdates();
     });
 
     WS.on('member_joined', (data) => {
@@ -335,7 +397,7 @@ const App = {
     });
 
     WS.on('location_update', (data) => {
-      this.updateMemberMarker(data.userId, data.lat, data.lng, data.name);
+      this.updateMemberMarker(data.userId, data.lat, data.lng, data.name, data.avatar_url);
     });
 
     WS.on('path_waypoint', (data) => {
@@ -370,20 +432,49 @@ const App = {
 
     WS.on('search_ended', (data) => {
       this.showSnackbar(`Search ${data.result}!`);
+      if (data.result === 'found') {
+        this.currentSessionData.session.status = 'completed';
+        this.updateSessionUI();
+      }
+    });
+
+    WS.on('session_ended', () => {
+      this.showSnackbar('Session ended!');
+      const sessionId = this.currentSession?.id;
+      setTimeout(() => {
+        this.cleanupSession();
+        WS.disconnect();
+        this.nav('summary', { id: sessionId });
+      }, 1500);
     });
   },
 
   // ========== MEMBER MARKERS ==========
-  updateMemberMarker(userId, lat, lng, name) {
+  updateMemberMarker(userId, lat, lng, name, avatarUrl) {
     if (!this.map) return;
 
     if (this.markers[userId]) {
       this.markers[userId].setLatLng([lat, lng]);
     } else {
-      const color = this.getColorForUser(userId);
-      const marker = L.circleMarker([lat, lng], {
-        radius: 8, color, fillColor: color, fillOpacity: 0.7,
-      }).addTo(this.map);
+      let icon;
+      if (avatarUrl) {
+        icon = L.divIcon({
+          className: 'user-marker',
+          html: `<img src="${avatarUrl}" alt="" />`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+      } else {
+        const initial = (name || '?')[0].toUpperCase();
+        const color = this.getColorForUser(userId);
+        icon = L.divIcon({
+          className: 'user-marker',
+          html: `<span style="background:${color}">${initial}</span>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+      }
+      const marker = L.marker([lat, lng], { icon }).addTo(this.map);
       marker.bindPopup(name || userId);
       this.markers[userId] = marker;
     }
@@ -512,12 +603,6 @@ const App = {
       }
     };
 
-    const members = this.currentSessionData?.members || [];
-    const select = document.getElementById('route-target-select');
-    select.innerHTML = members
-      .filter(m => m.id !== this.currentUser.id)
-      .map(m => `<option value="${m.id}">${m.name}</option>`)
-      .join('');
   },
 
   async snapToRoads(waypoints) {
@@ -543,8 +628,29 @@ const App = {
   },
 
   // ========== LOCATION TRACKING ==========
-  startLocationTracking(pathType) {
-    this.locationPathType = pathType;
+  startLocationUpdates() {
+    if (this.locationUpdateInterval) return;
+    if (!navigator.geolocation) return;
+
+    this.locationUpdateInterval = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          WS.send({
+            type: 'location_update',
+            lat: lat.toString(),
+            lng: lng.toString(),
+            name: this.currentUser.name,
+            avatar_url: this.currentUser.avatar_url || '',
+          });
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 },
+      );
+    }, 2000);
+  },
+
+  startPathTracking(pathType) {
     this.trackedWaypoints = [];
     this.trackedPathType = pathType;
 
@@ -559,12 +665,6 @@ const App = {
           const { latitude: lat, longitude: lng } = pos.coords;
           const ts = Date.now();
           this.trackedWaypoints.push({ lat, lng, t: ts });
-          WS.send({
-            type: 'location_update',
-            lat: lat.toString(),
-            lng: lng.toString(),
-            name: this.currentUser.name,
-          });
           WS.send({
             type: 'path_waypoint',
             pathType,
@@ -581,15 +681,19 @@ const App = {
     };
 
     sendPosition();
-    this.locationInterval = setInterval(sendPosition, 2000);
+    this.pathTrackingInterval = setInterval(sendPosition, 2000);
   },
 
-  stopLocationTracking() {
-    if (this.locationInterval) {
-      clearInterval(this.locationInterval);
-      this.locationInterval = null;
+  stopAllTracking() {
+    if (this.locationUpdateInterval) {
+      clearInterval(this.locationUpdateInterval);
+      this.locationUpdateInterval = null;
     }
-    this.locationPathType = null;
+    if (this.pathTrackingInterval) {
+      clearInterval(this.pathTrackingInterval);
+      this.pathTrackingInterval = null;
+    }
+    this.trackedPathType = null;
   },
 
   // ========== SUMMARY ==========
@@ -695,7 +799,7 @@ const App = {
 
   // ========== CLEANUP ==========
   cleanupSession() {
-    this.stopLocationTracking();
+    this.stopAllTracking();
 
     Object.values(this.markers).forEach(m => {
       if (m.remove) m.remove();

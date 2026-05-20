@@ -38,14 +38,14 @@ const API = {
   del(path) { return this.request('DELETE', path); },
 
   // Auth
-  async googleLogin(idToken) {
-    const res = await this.post('/api/auth/google', { idToken });
+  async googleLogin(accessToken) {
+    const res = await this.post('/api/auth/google', { accessToken });
     this.setToken(res.token);
     return res.user;
   },
 
   async getMe() {
-    return this.get('/api/me');
+    return this.get('/api/auth/me');
   },
 
   // Sessions
@@ -54,6 +54,7 @@ const API = {
   getSession(id) { return this.get(`/api/sessions/${id}`); },
   joinSession(code) { return this.post('/api/sessions/join', { code }); },
   changeRole(sessionId, role) { return this.post(`/api/sessions/${sessionId}/role`, { role }); },
+  endSession(sessionId) { return this.post(`/api/sessions/${sessionId}/end`); },
 
   // Hiding
   startHiding(sessionId) { return this.post(`/api/sessions/${sessionId}/start-hiding`); },
@@ -74,4 +75,7 @@ const API = {
 
   // Summary
   getSummary(sessionId) { return this.get(`/api/sessions/${sessionId}/summary`); },
+
+  // Avatar
+  updateAvatar(avatar_url) { return this.post('/api/auth/avatar', { avatar_url }); },
 };

@@ -5,6 +5,7 @@ const WS = {
   connected: false,
 
   connect(sessionId) {
+    this.handlers = {};
     if (this.ws) {
       this.ws.close();
     }
