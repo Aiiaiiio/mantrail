@@ -9,7 +9,6 @@ COPY db/ ./db/
 COPY routes/ ./routes/
 COPY middleware/ ./middleware/
 COPY ws/ ./ws/
-COPY static/ ./static/
 COPY document_root/ ./document_root/
 COPY certs/ ./certs/
 
