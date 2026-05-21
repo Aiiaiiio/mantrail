@@ -2,6 +2,7 @@ const { Router } = require('express');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { db } = require('../db/index');
 const { q, uuid } = require('../db/queries');
 const { signToken, authenticateToken } = require('../middleware/auth');
@@ -61,9 +62,13 @@ function userToJSON(user) {
   };
 }
 
+function generateInviteToken() {
+  return 'inv-' + crypto.randomBytes(24).toString('hex');
+}
+
 router.post('/google', async (req, res) => {
   try {
-    const { accessToken } = req.body;
+    const { accessToken, inviteToken } = req.body;
     if (!accessToken) {
       return res.status(400).json({ error: 'accessToken required' });
     }
@@ -74,6 +79,25 @@ router.post('/google', async (req, res) => {
     }
 
     const { sub: googleId, name, email, picture: googlePicture } = userInfo;
+
+    // Check allowlist
+    const allowed = q.findAllowedEmail.get(email);
+    const emailCount = q.countAllowedEmails.get().count;
+
+    if (!allowed) {
+      if (emailCount > 0) {
+        // Allowlist exists, email is not on it — check invite token
+        if (inviteToken) {
+          const tokenRec = q.findInviteByToken.get(inviteToken);
+          if (!tokenRec || tokenRec.used_by) {
+            return res.status(403).json({ error: 'Invalid or already used invite link' });
+          }
+        } else {
+          return res.status(403).json({ error: 'Access restricted. You need an invite to use this app.' });
+        }
+      }
+      // First user or invited: will be added below after user creation
+    }
 
     let user = q.findUserByGoogleId.get(googleId);
     const isNew = !user;
@@ -99,6 +123,21 @@ router.post('/google', async (req, res) => {
 
     if (!user.display_name) {
       db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(name, user.id);
+    }
+
+    // Add to allowlist if first user or invited
+    if (!allowed && (emailCount === 0 || inviteToken)) {
+      const isFirst = emailCount === 0;
+      // First user gets invite rights; invited users get the token's setting
+      const inviteCanInvite = isFirst ? 1 : (inviteToken ? (q.findInviteByToken.get(inviteToken)?.can_invite || 0) : 0);
+      q.insertAllowedEmail.run(uuid(), email, user.id, inviteCanInvite);
+      // Mark invite token used
+      if (inviteToken) {
+        const tokenRec = q.findInviteByToken.get(inviteToken);
+        if (tokenRec && !tokenRec.used_by) {
+          q.useInviteToken.run(user.id, tokenRec.id);
+        }
+      }
     }
 
     user = q.findUserById.get(user.id);
@@ -129,6 +168,65 @@ router.put('/profile', authenticateToken, (req, res) => {
   const json = userToJSON(user);
   const token = signToken({ userId: user.id, name: json.display_name, avatar_url: user.avatar_url });
   res.json({ token, user: json });
+});
+
+function canInvite(userId) {
+  const user = q.findUserById.get(userId);
+  if (!user) return false;
+  const count = q.countAllowedEmails.get().count;
+  if (count === 0) return true; // bootstrap: allowlist empty, first user can manage
+  const entry = q.findAllowedEmail.get(user.email);
+  return entry && entry.can_invite === 1;
+}
+
+// Allowlist management (auth required + can_invite)
+router.use('/allowlist', authenticateToken);
+router.use('/invite', authenticateToken);
+
+router.get('/allowlist', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const list = q.findAllowedEmails.all();
+  res.json({ entries: list });
+});
+
+router.post('/allowlist', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const { email, can_invite } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  const existing = q.findAllowedEmail.get(email);
+  if (existing) return res.status(400).json({ error: 'Email already in allowlist' });
+  q.insertAllowedEmail.run(uuid(), email, req.user.userId, can_invite ? 1 : 0);
+  res.json({ entry: q.findAllowedEmail.get(email) });
+});
+
+router.patch('/allowlist/:id', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const { can_invite } = req.body;
+  if (can_invite === undefined) return res.status(400).json({ error: 'can_invite required' });
+  q.updateAllowedEmailCanInvite.run(can_invite ? 1 : 0, req.params.id);
+  res.json({ entry: q.findAllowedEmail.get(req.params.id) });
+});
+
+router.delete('/allowlist/:id', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  q.deleteAllowedEmail.run(req.params.id);
+  res.json({ success: true });
+});
+
+router.get('/invite/tokens', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const tokens = q.findInviteTokens.all();
+  res.json({ tokens });
+});
+
+router.post('/invite/generate', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const { can_invite } = req.body;
+  const id = uuid();
+  const token = generateInviteToken();
+  q.insertInviteToken.run(id, token, req.user.userId, can_invite ? 1 : 0);
+  const record = db.prepare('SELECT * FROM invite_tokens WHERE id = ?').get(id);
+  res.json({ token: record });
 });
 
 module.exports = router;

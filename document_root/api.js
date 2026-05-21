@@ -37,10 +37,13 @@ const API = {
   post(path, body) { return this.request('POST', path, body); },
   put(path, body) { return this.request('PUT', path, body); },
   del(path) { return this.request('DELETE', path); },
+  patch(path, body) { return this.request('PATCH', path, body); },
 
   // Auth
-  async googleLogin(accessToken) {
-    const res = await this.post('/api/auth/google', { accessToken });
+  async googleLogin(accessToken, inviteToken) {
+    const body = { accessToken };
+    if (inviteToken) body.inviteToken = inviteToken;
+    const res = await this.post('/api/auth/google', body);
     this.setToken(res.token);
     return res.user;
   },
@@ -48,6 +51,16 @@ const API = {
   async getMe() {
     return this.get('/api/auth/me');
   },
+
+  // Allowlist
+  getAllowlist() { return this.get('/api/auth/allowlist'); },
+  addToAllowlist(email, canInvite) { return this.post('/api/auth/allowlist', { email, can_invite: canInvite ? 1 : 0 }); },
+  removeFromAllowlist(id) { return this.del(`/api/auth/allowlist/${id}`); },
+  toggleAllowlistPermission(id, canInvite) { return this.patch(`/api/auth/allowlist/${id}`, { can_invite: canInvite ? 1 : 0 }); },
+
+  // Invite tokens
+  getInviteTokens() { return this.get('/api/auth/invite/tokens'); },
+  generateInvite(canInvite) { return this.post('/api/auth/invite/generate', { can_invite: canInvite ? 1 : 0 }); },
 
   // Sessions
   getSessions() { return this.get('/api/sessions'); },

@@ -78,6 +78,23 @@ const q = {
   findLogEntryById: db.prepare('SELECT * FROM log_entries WHERE id = ?'),
   deleteLogEntry: db.prepare('DELETE FROM log_entries WHERE id = ? AND user_id = ?'),
 
+  // Allowlist
+  findAllowedEmail: db.prepare('SELECT * FROM allowed_emails WHERE email = ?'),
+  findAllowedEmails: db.prepare(`SELECT ae.*, u.name as added_by_name
+    FROM allowed_emails ae LEFT JOIN users u ON u.id = ae.added_by ORDER BY ae.created_at DESC`),
+  insertAllowedEmail: db.prepare('INSERT INTO allowed_emails (id, email, added_by, can_invite) VALUES (?, ?, ?, ?)'),
+  updateAllowedEmailCanInvite: db.prepare('UPDATE allowed_emails SET can_invite = ? WHERE id = ?'),
+  deleteAllowedEmail: db.prepare('DELETE FROM allowed_emails WHERE id = ?'),
+  countAllowedEmails: db.prepare('SELECT COUNT(*) as count FROM allowed_emails'),
+
+  // Invite tokens
+  findInviteByToken: db.prepare('SELECT * FROM invite_tokens WHERE token = ?'),
+  findInviteTokens: db.prepare(`SELECT it.*, u.name as created_by_name, u2.name as used_by_name
+    FROM invite_tokens it LEFT JOIN users u ON u.id = it.created_by LEFT JOIN users u2 ON u2.id = it.used_by
+    ORDER BY it.created_at DESC`),
+  insertInviteToken: db.prepare('INSERT INTO invite_tokens (id, token, created_by, can_invite) VALUES (?, ?, ?, ?)'),
+  useInviteToken: db.prepare("UPDATE invite_tokens SET used_by = ?, used_at = datetime('now') WHERE id = ? AND used_by IS NULL"),
+
   findOldSessions: db.prepare("SELECT id FROM sessions WHERE created_at < datetime('now', '-30 days')"),
   deleteSessionMembers: db.prepare('DELETE FROM session_members WHERE session_id = ?'),
   deleteHidingSessions: db.prepare('DELETE FROM hiding_sessions WHERE session_id = ?'),

@@ -69,6 +69,24 @@ CREATE TABLE IF NOT EXISTS dogs (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS allowed_emails (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  added_by TEXT REFERENCES users(id),
+  can_invite INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS invite_tokens (
+  id TEXT PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  created_by TEXT NOT NULL REFERENCES users(id),
+  used_by TEXT REFERENCES users(id),
+  used_at TEXT,
+  can_invite INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS log_entries (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id),

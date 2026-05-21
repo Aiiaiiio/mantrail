@@ -211,6 +211,25 @@
     "sleepy": "Sleepy",
     "tired": "Tired"
   },
+  "access": {
+    "title": "Access Management",
+    "allowedEmails": "Allowed Emails",
+    "addEmail": "Add Email",
+    "canInviteLabel": "Can invite others",
+    "permission": "Permission",
+    "invitePermission": "Invite permission",
+    "granted": "Can invite",
+    "restricted": "No invite rights",
+    "inviteLinks": "Invite Links",
+    "generateLink": "Generate Invite Link",
+    "deniedTitle": "Access Restricted",
+    "deniedMessage": "You need an invite to use this app. Ask a friend who already has access to generate an invite link for you.",
+    "tryAgain": "Try Again",
+    "inviteCopied": "Invite link copied to clipboard!",
+    "noInvites": "No invite links generated yet.",
+    "usedBy": "Used by",
+    "unused": "Unused"
+  },
   "language": {
     "hu": "Magyar",
     "en": "English",

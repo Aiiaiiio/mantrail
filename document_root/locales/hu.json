@@ -211,6 +211,25 @@
     "sleepy": "Álmos",
     "tired": "Fáradt"
   },
+  "access": {
+    "title": "Hozzáférés kezelése",
+    "allowedEmails": "Engedélyezett email címek",
+    "addEmail": "Email hozzáadása",
+    "canInviteLabel": "Meghívhat másokat",
+    "permission": "Jogosultság",
+    "invitePermission": "Meghívási jog",
+    "granted": "Meghívhat",
+    "restricted": "Nincs joga meghívni",
+    "inviteLinks": "Meghívó linkek",
+    "generateLink": "Meghívó link létrehozása",
+    "deniedTitle": "Hozzáférés korlátozva",
+    "deniedMessage": "Meghívó szükséges az alkalmazás használatához. Kérj meg egy barátot, aki már hozzáfér, hogy generáljon egy meghívó linket.",
+    "tryAgain": "Újrapróbálkozás",
+    "inviteCopied": "Meghívó link a vágólapra másolva!",
+    "noInvites": "Még nincsenek meghívó linkek.",
+    "usedBy": "Használta",
+    "unused": "Felhasználatlan"
+  },
   "language": {
     "hu": "Magyar",
     "en": "English",

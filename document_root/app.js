@@ -112,6 +112,7 @@ const App = {
   currentPage: null,
   currentPageParams: null,
   cachedSessions: null,
+  pendingInviteToken: null,
   map: null,
   markers: {},
   hidingPolyline: null,
@@ -208,6 +209,8 @@ const App = {
       case 'log-detail':
         this.renderLogDetail(params.id);
         break;
+      case 'access-denied':
+        break;
     }
   },
 
@@ -220,6 +223,10 @@ const App = {
 
   // ========== LOGIN ==========
   async renderLogin() {
+    // Read invite token from URL
+    const params = new URLSearchParams(window.location.search);
+    this.pendingInviteToken = params.get('token') || null;
+
     try {
       const config = await fetch('/api/config').then(r => r.json());
       const clientId = config.googleClientId;
@@ -247,7 +254,7 @@ const App = {
       scope: 'openid email profile',
       callback: (response) => {
         if (response.access_token) {
-          this.handleGoogleSignIn(response.access_token);
+          this.handleGoogleSignIn(response.access_token, this.pendingInviteToken);
         }
       },
     });
@@ -255,14 +262,19 @@ const App = {
     btn.onclick = () => this.tokenClient.requestAccessToken();
   },
 
-  async handleGoogleSignIn(accessToken) {
+  async handleGoogleSignIn(accessToken, inviteToken) {
     try {
-      const user = await API.googleLogin(accessToken);
+      const user = await API.googleLogin(accessToken, inviteToken);
+      this.pendingInviteToken = null;
       this.currentUser = user;
       this.nav('dashboard');
       this.showSnackbar(I18n.t('login.signedInAs', { name: user.name }));
     } catch (e) {
-      this.showSnackbar(I18n.t('login.loginFailed', { message: e.message }));
+      if (e.message && e.message.startsWith('Access restricted')) {
+        this.nav('access-denied');
+      } else {
+        this.showSnackbar(I18n.t('login.loginFailed', { message: e.message }));
+      }
     }
   },
 
@@ -359,13 +371,15 @@ const App = {
       try {
         await API.addDog(name);
         input.value = '';
-        this.renderDogs();
+    this.renderAccessManagement();
+    this.renderDogs();
       } catch (e) {
         this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
 
     this.renderDogs();
+    this.renderAccessManagement();
 
     try {
       const res = await API.getSessions();
@@ -393,6 +407,112 @@ const App = {
         <button class="btn btn-sm" onclick="App.nav('session', {id:'${s.id}'})">${I18n.t('dashboard.open')}</button>
       </div>
     `).join('');
+  },
+
+  // ========== ACCESS MANAGEMENT ==========
+  async renderAccessManagement() {
+    const card = document.getElementById('access-management-card');
+    try {
+      const res = await API.getAllowlist();
+      const entries = res.entries;
+      card.style.display = 'block';
+
+      this.renderAllowlist(entries);
+      this.renderInviteTokens();
+    } catch (e) {
+      card.style.display = 'none';
+      return;
+    }
+
+    document.getElementById('add-allowed-btn').onclick = async () => {
+      const input = document.getElementById('new-allowed-email');
+      const email = input.value.trim();
+      if (!email) return;
+      const canInvite = document.getElementById('add-can-invite').checked;
+      try {
+        await API.addToAllowlist(email, canInvite);
+        input.value = '';
+        document.getElementById('add-can-invite').checked = false;
+        const res = await API.getAllowlist();
+        this.renderAllowlist(res.entries);
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+    };
+
+    document.getElementById('generate-invite-btn').onclick = async () => {
+      const canInvite = document.getElementById('invite-can-invite').checked;
+      try {
+        const res = await API.generateInvite(canInvite);
+        const url = `${window.location.origin}${window.location.pathname}?token=${res.token.token}`;
+        await navigator.clipboard.writeText(url);
+        this.showSnackbar(I18n.t('access.inviteCopied'));
+        document.getElementById('invite-can-invite').checked = false;
+        this.renderInviteTokens();
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+    };
+  },
+
+  renderAllowlist(entries) {
+    const container = document.getElementById('allowlist-entries');
+    container.innerHTML = entries.map(e => `
+      <div class="dog-item">
+        <span>${e.email}</span>
+        <span style="font-size:12px;color:${e.can_invite ? '#43a047' : '#999'};margin-left:8px">
+          ${e.can_invite ? I18n.t('access.granted') : I18n.t('access.restricted')}
+        </span>
+        <button class="btn btn-sm ${e.can_invite ? 'btn-secondary' : 'btn'}" onclick="App.toggleAllowedPermission('${e.id}', ${e.can_invite ? 0 : 1})">
+          ${e.can_invite ? I18n.t('access.restricted') : I18n.t('access.granted')}
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="App.removeAllowedEmail('${e.id}')">${I18n.t('dashboard.remove')}</button>
+      </div>
+    `).join('');
+  },
+
+  async toggleAllowedPermission(id, canInvite) {
+    try {
+      await API.toggleAllowlistPermission(id, canInvite);
+      const res = await API.getAllowlist();
+      this.renderAllowlist(res.entries);
+    } catch (e) {
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+    }
+  },
+
+  async removeAllowedEmail(id) {
+    try {
+      await API.removeFromAllowlist(id);
+      const res = await API.getAllowlist();
+      this.renderAllowlist(res.entries);
+    } catch (e) {
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+    }
+  },
+
+  async renderInviteTokens() {
+    const container = document.getElementById('invite-tokens-list');
+    try {
+      const res = await API.getInviteTokens();
+      const tokens = res.tokens;
+      container.innerHTML = tokens.map(t => {
+        const used = t.used_by ? `<span style="color:#43a047">${I18n.t('access.usedBy')} ${t.used_by_name || 'someone'}</span>` : `<span style="color:#888">${I18n.t('access.unused')}</span>`;
+        const url = `${window.location.origin}${window.location.pathname}?token=${t.token}`;
+        return `
+          <div class="dog-item">
+            <span style="font-size:12px;font-family:monospace;word-break:break-all">${t.token}</span>
+            ${used}
+            <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText('${url}')">${I18n.t('session.copy')}</button>
+          </div>
+        `;
+      }).join('');
+      if (!tokens.length) {
+        container.innerHTML = `<div style="font-size:13px;color:#999">${I18n.t('access.noInvites')}</div>`;
+      }
+    } catch (e) {
+      container.innerHTML = '';
+    }
   },
 
   // ========== SESSION ==========
