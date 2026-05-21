@@ -77,8 +77,8 @@ const API = {
   // Summary
   getSummary(sessionId) { return this.get(`/api/sessions/${sessionId}/summary`); },
 
-  // Avatar
-  updateAvatar(avatar_url) { return this.post('/api/auth/avatar', { avatar_url }); },
+  // Profile
+  updateProfile(data) { return this.put('/api/auth/profile', data); },
 
   // Dogs
   getDogs() { return this.get('/api/dogs'); },

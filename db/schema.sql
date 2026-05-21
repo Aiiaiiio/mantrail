@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT,
   avatar_url TEXT,
+  display_name TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

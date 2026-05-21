@@ -238,6 +238,23 @@ const App = {
 
     document.getElementById('logout-btn').onclick = () => this.logout();
 
+    const dnInput = document.getElementById('display-name-input');
+    const dn = this.currentUser?.display_name || this.currentUser?.name || '';
+    dnInput.value = dn;
+
+    document.getElementById('save-display-name-btn').onclick = async () => {
+      const val = dnInput.value.trim();
+      if (!val) return;
+      try {
+        const res = await API.updateProfile({ display_name: val });
+        this.currentUser = res.user;
+        API.setToken(res.token);
+        this.showSnackbar('Display name updated!');
+      } catch (e) {
+        this.showSnackbar(e.message);
+      }
+    };
+
     document.getElementById('add-dog-btn').onclick = async () => {
       const input = document.getElementById('new-dog-name');
       const name = input.value.trim();
@@ -410,8 +427,9 @@ const App = {
     const lastWp = waypoints.length > 0 ? waypoints[waypoints.length - 1] : null;
     const pathLength = calcPathLength(waypoints);
 
+    const handlerName = this.currentUser?.display_name || this.currentUser?.name || '';
     const prefill = {
-      handler_name: this.currentUser?.name || '',
+      handler_name: handlerName,
       session_id: this.currentSession?.id || '',
       search_session_id: search.id,
       place_lat: lastWp?.lat ?? null,

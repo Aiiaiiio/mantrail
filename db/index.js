@@ -12,4 +12,8 @@ const schemaPath = path.resolve(__dirname, 'schema.sql');
 const schema = fs.readFileSync(schemaPath, 'utf-8');
 db.exec(schema);
 
+try {
+  db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+} catch (e) {}
+
 module.exports = { db };

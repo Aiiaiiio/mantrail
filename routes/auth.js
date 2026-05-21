@@ -51,6 +51,16 @@ function downloadAvatar(url, filePath) {
   });
 }
 
+function userToJSON(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar_url: user.avatar_url,
+    display_name: user.display_name || user.name,
+  };
+}
+
 router.post('/google', async (req, res) => {
   try {
     const { accessToken } = req.body;
@@ -71,10 +81,11 @@ router.post('/google', async (req, res) => {
       const id = uuid();
       q.createUser.run(id, googleId, name, email, '');
       user = q.findUserById.get(id);
+      db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(name, id);
     }
 
-    let avatarUrl = '';
-    if (googlePicture) {
+    let avatarUrl = user.avatar_url || '';
+    if (googlePicture && !user.avatar_url) {
       const ext = googlePicture.includes('.png') ? '.png' : '.jpg';
       const localPath = path.join(AVATAR_DIR, `${user.id}${ext}`);
       const ok = await downloadAvatar(googlePicture, localPath);
@@ -85,10 +96,15 @@ router.post('/google', async (req, res) => {
 
     db.prepare('UPDATE users SET name = ?, email = ?, avatar_url = ? WHERE id = ?')
       .run(name, email, avatarUrl, user.id);
-    user = q.findUserById.get(user.id);
 
-    const token = signToken({ userId: user.id, name: user.name, avatar_url: user.avatar_url });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url } });
+    if (!user.display_name) {
+      db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(name, user.id);
+    }
+
+    user = q.findUserById.get(user.id);
+    const json = userToJSON(user);
+    const token = signToken({ userId: user.id, name: json.display_name, avatar_url: user.avatar_url });
+    res.json({ token, user: json });
   } catch (err) {
     console.error('Auth error:', err);
     res.status(401).json({ error: 'Authentication failed' });
@@ -100,7 +116,19 @@ router.get('/me', authenticateToken, (req, res) => {
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  res.json({ user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url } });
+  res.json({ user: userToJSON(user) });
+});
+
+router.put('/profile', authenticateToken, (req, res) => {
+  const { display_name } = req.body;
+  if (!display_name || !display_name.trim()) {
+    return res.status(400).json({ error: 'display_name required' });
+  }
+  db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(display_name.trim(), req.user.userId);
+  const user = q.findUserById.get(req.user.userId);
+  const json = userToJSON(user);
+  const token = signToken({ userId: user.id, name: json.display_name, avatar_url: user.avatar_url });
+  res.json({ token, user: json });
 });
 
 module.exports = router;
