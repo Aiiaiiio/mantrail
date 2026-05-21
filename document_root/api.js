@@ -35,6 +35,7 @@ const API = {
 
   get(path) { return this.request('GET', path); },
   post(path, body) { return this.request('POST', path, body); },
+  put(path, body) { return this.request('PUT', path, body); },
   del(path) { return this.request('DELETE', path); },
 
   // Auth
@@ -78,4 +79,15 @@ const API = {
 
   // Avatar
   updateAvatar(avatar_url) { return this.post('/api/auth/avatar', { avatar_url }); },
+
+  // Dogs
+  getDogs() { return this.get('/api/dogs'); },
+  addDog(name) { return this.post('/api/dogs', { name }); },
+  deleteDog(id) { return this.del(`/api/dogs/${id}`); },
+
+  // Log
+  getLogEntries() { return this.get('/api/log'); },
+  createLogEntry(data) { return this.post('/api/log', data); },
+  updateLogEntry(id, data) { return this.put(`/api/log/${id}`, data); },
+  deleteLogEntry(id) { return this.del(`/api/log/${id}`); },
 };

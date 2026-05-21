@@ -1,3 +1,44 @@
+const LOG_DIFFICULTIES = ['backtrack', 'time_delay', 'loop', 'smell_trap_kettle'];
+const LOG_FEELINGS = ['excited', 'calm', 'annoyed', 'tense', 'happy', 'sleepy', 'tired'];
+const LOG_PATH_TYPES = [
+  { value: 'known', label: 'Known' },
+  { value: 'guided_blind', label: 'Guided-Blind' },
+  { value: 'assisted_blind', label: 'Assisted-Blind' },
+  { value: 'double_blind', label: 'Double-Blind' },
+];
+
+function calcPathLength(waypoints) {
+  if (!waypoints || waypoints.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < waypoints.length; i++) {
+    const a = waypoints[i - 1];
+    const b = waypoints[i];
+    total += haversine(a.lat, a.lng, b.lat, b.lng);
+  }
+  return Math.round(total);
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = (d) => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toLocalDateInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toISOString().slice(0, 10);
+}
+
+function toLocalTimeInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toTimeString().slice(0, 5);
+}
+
 const App = {
   currentUser: null,
   currentSession: null,
@@ -14,6 +55,10 @@ const App = {
   locationInterval: null,
   trackedWaypoints: [],
   trackedPathType: null,
+  logEntryPrefill: null,
+  logEntryEditId: null,
+  leMap: null,
+  leMarker: null,
 
   async init() {
     try {
@@ -59,6 +104,12 @@ const App = {
         break;
       case 'summary':
         this.renderSummary(params.id);
+        break;
+      case 'log':
+        this.renderLog();
+        break;
+      case 'log-entry':
+        this.renderLogEntry(params || {});
         break;
     }
   },
@@ -126,6 +177,36 @@ const App = {
     this.nav('login');
   },
 
+  // ========== DOGS ==========
+  async renderDogs() {
+    const list = document.getElementById('dogs-list');
+    try {
+      const res = await API.getDogs();
+      const dogs = res.dogs;
+      if (dogs.length === 0) {
+        list.innerHTML = '<div class="empty-state" style="padding:12px;font-size:13px">No dogs yet.</div>';
+        return;
+      }
+      list.innerHTML = dogs.map(d => `
+        <div class="dog-item">
+          <span>${d.name}</span>
+          <button class="btn btn-sm btn-danger" onclick="App.deleteDog('${d.id}')">Remove</button>
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state" style="padding:12px;font-size:13px">Error: ${e.message}</div>`;
+    }
+  },
+
+  async deleteDog(id) {
+    try {
+      await API.deleteDog(id);
+      this.renderDogs();
+    } catch (e) {
+      this.showSnackbar(e.message);
+    }
+  },
+
   // ========== DASHBOARD ==========
   async renderDashboard() {
     const list = document.getElementById('session-list');
@@ -151,7 +232,26 @@ const App = {
       }
     };
 
+    document.getElementById('open-log-btn').onclick = () => {
+      this.nav('log');
+    };
+
     document.getElementById('logout-btn').onclick = () => this.logout();
+
+    document.getElementById('add-dog-btn').onclick = async () => {
+      const input = document.getElementById('new-dog-name');
+      const name = input.value.trim();
+      if (!name) return;
+      try {
+        await API.addDog(name);
+        input.value = '';
+        this.renderDogs();
+      } catch (e) {
+        this.showSnackbar(e.message);
+      }
+    };
+
+    this.renderDogs();
 
     try {
       const res = await API.getSessions();
@@ -258,14 +358,16 @@ const App = {
       this.startPathTracking('search');
     }).catch(e => this.showSnackbar(e.message));
 
-    document.getElementById('found-btn').onclick = () => API.searchResult(session.id, 'found', { waypoints: this.trackedWaypoints }).then(() => {
+    document.getElementById('found-btn').onclick = () => API.searchResult(session.id, 'found', { waypoints: this.trackedWaypoints }).then(res => {
       this.showSnackbar('Person found! Session complete.');
       this.stopAllTracking();
+      this.offerLogEntry(res);
     }).catch(e => this.showSnackbar(e.message));
 
-    document.getElementById('fail-btn').onclick = () => API.searchResult(session.id, 'failed', { waypoints: this.trackedWaypoints }).then(() => {
+    document.getElementById('fail-btn').onclick = () => API.searchResult(session.id, 'failed', { waypoints: this.trackedWaypoints }).then(res => {
       this.showSnackbar('Search failed.');
       this.stopAllTracking();
+      this.offerLogEntry(res);
     }).catch(e => this.showSnackbar(e.message));
 
     document.getElementById('end-session-btn').onclick = async () => {
@@ -298,6 +400,33 @@ const App = {
 
     document.getElementById('action-buttons').style.display = 'block';
     document.getElementById('route-draw-section').style.display = isMaster ? 'block' : 'none';
+  },
+
+  offerLogEntry(res) {
+    const search = res.search;
+    if (!search) return;
+    const durationMin = search.duration_seconds ? Math.round(search.duration_seconds / 60 * 10) / 10 : null;
+    const waypoints = JSON.parse(search.waypoints || '[]');
+    const lastWp = waypoints.length > 0 ? waypoints[waypoints.length - 1] : null;
+    const pathLength = calcPathLength(waypoints);
+
+    const prefill = {
+      handler_name: this.currentUser?.name || '',
+      session_id: this.currentSession?.id || '',
+      search_session_id: search.id,
+      place_lat: lastWp?.lat ?? null,
+      place_lng: lastWp?.lng ?? null,
+      search_date: toLocalDateInput(new Date().toISOString()),
+      search_time: toLocalTimeInput(new Date().toISOString()),
+      search_duration_seconds: search.duration_seconds,
+      path_length_meters: pathLength,
+    };
+
+    if (confirm('Save this search to your mantrailing log?')) {
+      this.cleanupSession();
+      WS.disconnect();
+      this.nav('log-entry', { prefill });
+    }
   },
 
   renderMembers(members) {
@@ -794,6 +923,275 @@ const App = {
       setTimeout(() => this.summaryMap.invalidateSize(), 500);
     } catch (e) {
       document.getElementById('summary-content').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+  },
+
+  // ========== LOG LIST ==========
+  async renderLog() {
+    document.getElementById('back-from-log-btn').onclick = () => this.nav('dashboard');
+
+    document.getElementById('new-log-entry-btn').onclick = () => {
+      this.nav('log-entry', { prefill: null });
+    };
+
+    const list = document.getElementById('log-entries-list');
+    list.innerHTML = '<div class="empty-state">Loading...</div>';
+
+    try {
+      const res = await API.getLogEntries();
+      const entries = res.entries;
+
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="empty-state">No log entries yet.</div>';
+        return;
+      }
+
+      list.innerHTML = entries.map(e => {
+        const difficulties = JSON.parse(e.difficulties || '[]');
+        const feelings = JSON.parse(e.handler_feelings || '[]');
+        const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
+        return `
+          <div class="card log-entry-card" data-id="${e.id}">
+            <div class="log-entry-header">
+              <strong>${e.handler_name}</strong> &middot; ${e.dog_name}
+              <span class="meta">${date}</span>
+            </div>
+            <div class="meta">
+              ${e.place_name ? e.place_name + ' &middot; ' : ''}
+              ${e.path_type ? e.path_type.replace(/_/g, ' ') + ' &middot; ' : ''}
+              ${e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' min' : ''}
+              ${e.path_length_meters ? ' &middot; ' + e.path_length_meters + ' m' : ''}
+            </div>
+            <div class="meta">
+              ${difficulties.length ? 'Difficulties: ' + difficulties.join(', ') : ''}
+              ${feelings.length ? 'Feelings: ' + feelings.join(', ') : ''}
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-sm" onclick="App.editLogEntry('${e.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntry('${e.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+  },
+
+  async editLogEntry(id) {
+    try {
+      const res = await API.getLogEntries();
+      const entry = res.entries.find(e => e.id === id);
+      if (entry) {
+        this.nav('log-entry', { entryId: id, prefill: entry });
+      }
+    } catch (e) {
+      this.showSnackbar(e.message);
+    }
+  },
+
+  async deleteLogEntry(id) {
+    if (!confirm('Delete this log entry?')) return;
+    try {
+      await API.deleteLogEntry(id);
+      this.renderLog();
+    } catch (e) {
+      this.showSnackbar(e.message);
+    }
+  },
+
+  // ========== LOG ENTRY FORM ==========
+  async renderLogEntry(params) {
+    this.cleanupLogEntryMap();
+
+    const isEdit = !!params.entryId;
+    const prefill = params.prefill || {};
+
+    document.getElementById('log-entry-title').textContent = isEdit ? 'Edit Log Entry' : 'New Log Entry';
+    document.getElementById('cancel-log-entry-btn').onclick = () => this.nav('log');
+
+    const deleteBtn = document.getElementById('delete-log-entry-btn');
+    deleteBtn.style.display = isEdit ? '' : 'none';
+    if (isEdit) {
+      deleteBtn.onclick = async () => {
+        if (!confirm('Delete this log entry?')) return;
+        try {
+          await API.deleteLogEntry(params.entryId);
+          this.nav('log');
+        } catch (e) {
+          this.showSnackbar(e.message);
+        }
+      };
+    }
+
+    // Populate dog dropdown
+    const dogSelect = document.getElementById('le-dog-name');
+    try {
+      const dogsRes = await API.getDogs();
+      const dogs = dogsRes.dogs;
+      dogSelect.innerHTML = '<option value="">Select a dog...</option>' +
+        dogs.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
+    } catch (e) {
+      console.error('Failed to load dogs:', e);
+    }
+
+    // Populate checkboxes
+    this.renderCheckboxGroup('le-difficulties', LOG_DIFFICULTIES);
+    this.renderCheckboxGroup('le-feelings', LOG_FEELINGS);
+
+    // Fill form
+    document.getElementById('le-handler-name').value = prefill.handler_name || '';
+    if (prefill.dog_name && prefill.dog_name !== '') {
+      dogSelect.value = prefill.dog_name;
+    } else if (dogSelect.options.length === 2) {
+      // Only one dog, pre-select it
+      dogSelect.value = dogSelect.options[1].value;
+    }
+    document.getElementById('le-search-date').value = prefill.search_date || '';
+    document.getElementById('le-search-time').value = prefill.search_time || '';
+    document.getElementById('le-place-name').value = prefill.place_name || '';
+    document.getElementById('le-weather').value = prefill.weather_conditions || '';
+
+    if (prefill.search_duration_seconds != null) {
+      document.getElementById('le-duration').value = Math.round(prefill.search_duration_seconds / 60 * 10) / 10;
+    } else {
+      document.getElementById('le-duration').value = '';
+    }
+
+    if (prefill.path_length_meters != null) {
+      document.getElementById('le-path-length').value = prefill.path_length_meters;
+    } else {
+      document.getElementById('le-path-length').value = '';
+    }
+
+    document.getElementById('le-path-type').value = prefill.path_type || '';
+
+    // Set checkboxes for difficulties/feelings
+    const difficulties = prefill.difficulties ? (typeof prefill.difficulties === 'string' ? JSON.parse(prefill.difficulties) : prefill.difficulties) : [];
+    const feelings = prefill.handler_feelings ? (typeof prefill.handler_feelings === 'string' ? JSON.parse(prefill.handler_feelings) : prefill.handler_feelings) : [];
+
+    document.querySelectorAll('#le-difficulties input[type="checkbox"]').forEach(cb => {
+      cb.checked = difficulties.includes(cb.value);
+    });
+    document.querySelectorAll('#le-feelings input[type="checkbox"]').forEach(cb => {
+      cb.checked = feelings.includes(cb.value);
+    });
+
+    document.getElementById('le-notes').value = prefill.notes || '';
+
+    // Setup mini map
+    this.setupLogEntryMap(prefill);
+
+    // Store metadata for submit
+    this.logEntryPrefill = prefill;
+    this.logEntryEditId = params.entryId || null;
+
+    document.getElementById('save-log-entry-btn').onclick = (e) => this.saveLogEntry(e);
+  },
+
+  renderCheckboxGroup(containerId, options) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = options.map(opt => `
+      <label class="checkbox-label">
+        <input type="checkbox" value="${opt}" />
+        ${opt.replace(/_/g, ' ')}
+      </label>
+    `).join('');
+  },
+
+  getCheckedValues(containerId) {
+    const values = [];
+    document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`).forEach(cb => {
+      values.push(cb.value);
+    });
+    const custom = document.getElementById(`${containerId}-custom`);
+    if (custom && custom.value.trim()) {
+      values.push(custom.value.trim());
+    }
+    return values;
+  },
+
+  setupLogEntryMap(prefill) {
+    const mapEl = document.getElementById('le-map');
+    if (!mapEl) return;
+
+    this.leMap = L.map(mapEl).setView([47.2, 18.4], 13);
+    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0`, {
+      tileSize: 512, zoomOffset: -1, maxZoom: 22,
+      attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
+    }).addTo(this.leMap);
+
+    if (prefill.place_lat != null && prefill.place_lng != null) {
+      this.leMap.setView([prefill.place_lat, prefill.place_lng], 15);
+      this.leMarker = L.marker([prefill.place_lat, prefill.place_lng]).addTo(this.leMap);
+      document.getElementById('le-coords').textContent = `${prefill.place_lat.toFixed(6)}, ${prefill.place_lng.toFixed(6)}`;
+    } else {
+      this.leMap.locate({ setView: true, maxZoom: 15 });
+    }
+
+    this.leMap.on('click', (e) => {
+      if (this.leMarker) this.leMarker.remove();
+      this.leMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(this.leMap);
+      document.getElementById('le-coords').textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+    });
+
+    setTimeout(() => this.leMap.invalidateSize(), 300);
+  },
+
+  cleanupLogEntryMap() {
+    if (this.leMarker) { this.leMarker.remove(); this.leMarker = null; }
+    if (this.leMap) { this.leMap.remove(); this.leMap = null; }
+  },
+
+  async saveLogEntry(e) {
+    e.preventDefault();
+
+    const data = {
+      handler_name: document.getElementById('le-handler-name').value.trim(),
+      dog_name: document.getElementById('le-dog-name').value,
+      search_date: document.getElementById('le-search-date').value,
+      search_time: document.getElementById('le-search-time').value,
+      place_name: document.getElementById('le-place-name').value.trim() || null,
+      weather_conditions: document.getElementById('le-weather').value.trim(),
+      path_type: document.getElementById('le-path-type').value,
+      difficulties: this.getCheckedValues('le-difficulties'),
+      handler_feelings: this.getCheckedValues('le-feelings'),
+      notes: document.getElementById('le-notes').value.trim(),
+    };
+
+    const duration = parseFloat(document.getElementById('le-duration').value);
+    data.search_duration_seconds = isNaN(duration) ? null : Math.round(duration * 60);
+
+    const pathLen = parseFloat(document.getElementById('le-path-length').value);
+    data.path_length_meters = isNaN(pathLen) ? null : Math.round(pathLen);
+
+    if (this.leMarker) {
+      const latlng = this.leMarker.getLatLng();
+      data.place_lat = latlng.lat;
+      data.place_lng = latlng.lng;
+    }
+
+    if (this.logEntryPrefill?.session_id) data.session_id = this.logEntryPrefill.session_id;
+    if (this.logEntryPrefill?.search_session_id) data.search_session_id = this.logEntryPrefill.search_session_id;
+
+    if (!data.handler_name || !data.dog_name || !data.search_date || !data.search_time) {
+      this.showSnackbar('Handler name, dog, date, and time are required');
+      return;
+    }
+
+    try {
+      if (this.logEntryEditId) {
+        await API.updateLogEntry(this.logEntryEditId, data);
+        this.showSnackbar('Entry updated!');
+      } else {
+        await API.createLogEntry(data);
+        this.showSnackbar('Entry saved!');
+      }
+      this.logEntryPrefill = null;
+      this.logEntryEditId = null;
+      this.nav('log');
+    } catch (e) {
+      this.showSnackbar(e.message);
     }
   },
 

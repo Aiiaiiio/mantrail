@@ -103,6 +103,40 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
   border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
+.dog-item {
+  display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px;
+}
+.dog-item:last-child { border-bottom: none; }
+
+.log-entry-card { cursor: default; }
+.log-entry-header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.log-entry-header .meta { margin-left: auto; }
+
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.checkbox-label {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px; background: #f0f0f0;
+  font-size: 13px; cursor: pointer;
+}
+.checkbox-label input { accent-color: #136AEC; }
+
+#log-entry-form .form-group { margin-bottom: 14px; }
+#log-entry-form label { display: block; font-size: 0.9rem; margin-bottom: 4px; color: #555; font-weight: 500; }
+#log-entry-form input[type="text"],
+#log-entry-form input[type="number"],
+#log-entry-form input[type="date"],
+#log-entry-form input[type="time"],
+#log-entry-form select,
+#log-entry-form textarea {
+  width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px;
+}
+#log-entry-form input:focus,
+#log-entry-form select:focus,
+#log-entry-form textarea:focus { outline: none; border-color: #136AEC; }
+
+#le-map-section { margin-top: 8px; }
+
 @media (max-width: 600px) {
   .page { padding: 12px; }
   #login-page { padding-top: 80px; }

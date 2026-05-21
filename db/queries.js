@@ -43,6 +43,7 @@ const q = {
   updateHidingWaypoints: db.prepare('UPDATE hiding_sessions SET waypoints = ? WHERE id = ?'),
 
   insertSearch: db.prepare('INSERT INTO search_sessions (id, session_id, user_id, started_at) VALUES (?, ?, ?, ?)'),
+  findSearchById: db.prepare('SELECT * FROM search_sessions WHERE id = ?'),
   findActiveSearchByUser: db.prepare('SELECT * FROM search_sessions WHERE user_id = ? AND session_id = ? AND result IS NULL'),
   findActiveSearchBySession: db.prepare('SELECT * FROM search_sessions WHERE session_id = ? AND result IS NULL'),
   updateSearchEnd: db.prepare('UPDATE search_sessions SET ended_at = ?, waypoints = ?, result = ?, duration_seconds = ? WHERE id = ?'),
@@ -53,6 +54,28 @@ const q = {
   findRoutesBySession: db.prepare(`SELECT ar.*, u.name as assigned_to_name FROM assigned_routes ar
     INNER JOIN users u ON u.id = ar.assigned_to WHERE ar.session_id = ?`),
   deleteAssignedRoute: db.prepare('DELETE FROM assigned_routes WHERE id = ? AND session_id = ?'),
+
+  findDogs: db.prepare('SELECT * FROM dogs WHERE user_id = ? ORDER BY created_at ASC'),
+  findDogById: db.prepare('SELECT * FROM dogs WHERE id = ?'),
+  insertDog: db.prepare('INSERT INTO dogs (id, user_id, name) VALUES (?, ?, ?)'),
+  deleteDog: db.prepare('DELETE FROM dogs WHERE id = ? AND user_id = ?'),
+
+  insertLogEntry: db.prepare(`INSERT INTO log_entries
+    (id, user_id, session_id, search_session_id, handler_name, dog_name,
+     place_lat, place_lng, place_name, search_date, search_time,
+     weather_conditions, search_duration_seconds, path_length_meters,
+     difficulties, path_type, handler_feelings, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+  updateLogEntry: db.prepare(`UPDATE log_entries SET
+    handler_name = ?, dog_name = ?, place_lat = ?, place_lng = ?, place_name = ?,
+    search_date = ?, search_time = ?, weather_conditions = ?,
+    search_duration_seconds = ?, path_length_meters = ?,
+    difficulties = ?, path_type = ?, handler_feelings = ?, notes = ?,
+    updated_at = datetime('now')
+    WHERE id = ? AND user_id = ?`),
+  findLogEntries: db.prepare('SELECT * FROM log_entries WHERE user_id = ? ORDER BY created_at DESC'),
+  findLogEntryById: db.prepare('SELECT * FROM log_entries WHERE id = ?'),
+  deleteLogEntry: db.prepare('DELETE FROM log_entries WHERE id = ? AND user_id = ?'),
 };
 
 module.exports = { q, generateCode, now, uuid };

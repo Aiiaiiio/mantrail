@@ -59,3 +59,33 @@ CREATE TABLE IF NOT EXISTS assigned_routes (
   snapped INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS dogs (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS log_entries (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  session_id TEXT REFERENCES sessions(id),
+  search_session_id TEXT REFERENCES search_sessions(id),
+  handler_name TEXT NOT NULL,
+  dog_name TEXT NOT NULL,
+  place_lat REAL,
+  place_lng REAL,
+  place_name TEXT,
+  search_date TEXT NOT NULL,
+  search_time TEXT NOT NULL,
+  weather_conditions TEXT DEFAULT '',
+  search_duration_seconds INTEGER,
+  path_length_meters REAL,
+  difficulties TEXT DEFAULT '[]',
+  path_type TEXT DEFAULT '',
+  handler_feelings TEXT DEFAULT '[]',
+  notes TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);

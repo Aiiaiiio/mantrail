@@ -54,7 +54,7 @@ router.post('/:id/search-result', (req, res) => {
 
   broadcastToSession(session.id, { type: 'search_ended', userId: req.user.userId, result });
 
-  res.json({ success: true, duration_seconds: durationSec });
+  res.json({ success: true, duration_seconds: durationSec, search: q.findSearchById.get(search.id) });
 });
 
 module.exports = router;

@@ -30,11 +30,25 @@
           <button class="btn btn-sm btn-secondary" id="logout-btn">Sign Out</button>
         </div>
       </div>
+
       <div class="row" style="margin-bottom:16px">
         <button class="btn" id="create-session-btn">+ New Session</button>
         <button class="btn btn-secondary" id="join-session-btn">Join with Code</button>
+        <button class="btn btn-secondary" id="open-log-btn">My Log</button>
       </div>
+
       <div id="session-list"></div>
+
+      <hr style="margin:20px 0" />
+
+      <h2>My Dogs</h2>
+      <div id="dogs-section">
+        <div class="row" style="margin-bottom:12px">
+          <input type="text" id="new-dog-name" placeholder="Dog name" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
+          <button class="btn btn-sm" id="add-dog-btn">Add Dog</button>
+        </div>
+        <div id="dogs-list"></div>
+      </div>
     </div>
 
     <!-- SESSION -->
@@ -107,6 +121,97 @@
       </div>
       <div id="summary-map" style="height:50vh;border-radius:12px;margin-bottom:16px"></div>
       <div id="summary-content"></div>
+    </div>
+
+    <!-- LOG LIST -->
+    <div id="log-page" class="page">
+      <div class="top-bar">
+        <h1>Mantrailing Log</h1>
+        <div>
+          <button class="btn btn-sm btn-secondary" id="back-from-log-btn">Back</button>
+        </div>
+      </div>
+      <button class="btn" id="new-log-entry-btn">+ New Entry</button>
+      <div id="log-entries-list" style="margin-top:12px"></div>
+    </div>
+
+    <!-- LOG ENTRY FORM -->
+    <div id="log-entry-page" class="page">
+      <div class="top-bar">
+        <h1 id="log-entry-title">Log Entry</h1>
+        <button class="btn btn-sm btn-secondary" id="cancel-log-entry-btn">Cancel</button>
+      </div>
+      <form id="log-entry-form" style="max-width:600px">
+        <div class="form-group">
+          <label>Handler Name</label>
+          <input type="text" id="le-handler-name" required />
+        </div>
+        <div class="form-group">
+          <label>Dog</label>
+          <select id="le-dog-name" required>
+            <option value="">Select a dog...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="le-search-date" required />
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="le-search-time" required />
+        </div>
+        <div class="form-group">
+          <label>Place</label>
+          <input type="text" id="le-place-name" placeholder="Location name (optional)" />
+        </div>
+        <div class="form-group">
+          <label>Search Duration (minutes)</label>
+          <input type="number" id="le-duration" min="0" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label>Path Length (meters)</label>
+          <input type="number" id="le-path-length" min="0" step="1" />
+        </div>
+        <div class="form-group">
+          <label>Weather Conditions</label>
+          <input type="text" id="le-weather" placeholder="e.g. sunny, 15°C, light wind" />
+        </div>
+        <div class="form-group">
+          <label>Path Type</label>
+          <select id="le-path-type">
+            <option value="">Select...</option>
+            <option value="known">Known</option>
+            <option value="guided_blind">Guided-Blind</option>
+            <option value="assisted_blind">Assisted-Blind</option>
+            <option value="double_blind">Double-Blind</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Difficulties</label>
+          <div id="le-difficulties" class="checkbox-group"></div>
+          <input type="text" id="le-difficulties-custom" placeholder="+ custom difficulty" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
+        </div>
+        <div class="form-group">
+          <label>Handler Feelings</label>
+          <div id="le-feelings" class="checkbox-group"></div>
+          <input type="text" id="le-feelings-custom" placeholder="+ custom feeling" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="le-notes" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px"></textarea>
+        </div>
+
+        <div id="le-map-section" style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:4px;font-size:0.9rem;color:#555">Click on map to set search location</label>
+          <div id="le-map" style="height:300px;border-radius:8px;border:1px solid #ddd"></div>
+          <p id="le-coords" style="font-size:12px;color:#888;margin-top:4px">No location set</p>
+        </div>
+
+        <div class="row" style="margin-top:16px">
+          <button type="button" class="btn" id="save-log-entry-btn">Save Entry</button>
+          <button type="button" class="btn btn-secondary" id="delete-log-entry-btn" style="display:none">Delete</button>
+        </div>
+      </form>
     </div>
 
   </div>
