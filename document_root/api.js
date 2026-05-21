@@ -55,8 +55,6 @@ const API = {
   getSession(id) { return this.get(`/api/sessions/${id}`); },
   joinSession(code) { return this.post('/api/sessions/join', { code }); },
   changeRole(sessionId, role) { return this.post(`/api/sessions/${sessionId}/role`, { role }); },
-  endSession(sessionId) { return this.post(`/api/sessions/${sessionId}/end`); },
-
   // Hiding
   startHiding(sessionId) { return this.post(`/api/sessions/${sessionId}/start-hiding`); },
   imHidden(sessionId, extra) { return this.post(`/api/sessions/${sessionId}/im-hidden`, extra || {}); },

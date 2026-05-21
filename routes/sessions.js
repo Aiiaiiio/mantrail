@@ -25,7 +25,7 @@ router.post('/', (req, res) => {
   }
 
   q.insertSession.run(id, code, name, req.user.userId, 'active', now());
-  q.insertMember.run(uuid(), id, req.user.userId, 'session_master', now());
+  q.insertMember.run(uuid(), id, req.user.userId, 'passive_member', 1, now());
 
   const session = q.findSessionById.get(id);
   res.status(201).json({ session });
@@ -54,7 +54,7 @@ router.post('/join', (req, res) => {
 
   const session = q.findSessionByCode.get(code.toUpperCase(), 'active');
   if (!session) {
-    return res.status(404).json({ error: 'Session not found or already completed' });
+    return res.status(404).json({ error: 'Session not found' });
   }
 
   const existing = q.findMember.get(session.id, req.user.userId);
@@ -62,7 +62,7 @@ router.post('/join', (req, res) => {
     return res.json({ session });
   }
 
-  q.insertMember.run(uuid(), session.id, req.user.userId, 'passive_member', now());
+  q.insertMember.run(uuid(), session.id, req.user.userId, 'passive_member', 0, now());
 
   res.json({ session });
 });
@@ -103,23 +103,6 @@ router.post('/:id/role', (req, res) => {
 
   const members = q.findSessionMembers.all(session.id);
   res.json({ session, members });
-});
-
-router.post('/:id/end', (req, res) => {
-  const session = q.findSessionById.get(req.params.id);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
-
-  const member = q.findMember.get(session.id, req.user.userId);
-  if (!member) return res.status(403).json({ error: 'Not a member' });
-  if (member.role !== 'session_master') return res.status(403).json({ error: 'Only session master can end the session' });
-  if (session.status === 'completed') return res.status(400).json({ error: 'Session already completed' });
-
-  q.updateSessionStatus.run('completed', session.id);
-
-  const { broadcastToSession } = require('../ws/sessions');
-  broadcastToSession(session.id, { type: 'session_ended', sessionId: session.id });
-
-  res.json({ session: q.findSessionById.get(session.id) });
 });
 
 module.exports = router;

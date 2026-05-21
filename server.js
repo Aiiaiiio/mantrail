@@ -43,6 +43,21 @@ const server = https.createServer(options, app);
 
 setupWebSocket(server);
 
+const { q } = require('./db/queries');
+function cleanupOldSessions() {
+  const old = q.findOldSessions.all();
+  for (const s of old) {
+    q.deleteSessionMembers.run(s.id);
+    q.deleteHidingSessions.run(s.id);
+    q.deleteSearchSessions.run(s.id);
+    q.deleteAssignedRoutes.run(s.id);
+    q.deleteSession.run(s.id);
+  }
+  if (old.length) console.log(`Cleaned up ${old.length} old session(s)`);
+}
+setInterval(cleanupOldSessions, 60 * 60 * 1000);
+cleanupOldSessions();
+
 const PORT = process.env.PORT || 23456;
 server.listen(PORT, () => {
   console.log(`Server running on https://0.0.0.0:${PORT}`);

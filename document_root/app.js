@@ -1,10 +1,10 @@
 const LOG_DIFFICULTIES = ['backtrack', 'time_delay', 'loop', 'smell_trap_kettle'];
 const LOG_FEELINGS = ['excited', 'calm', 'annoyed', 'tense', 'happy', 'sleepy', 'tired'];
 const LOG_PATH_TYPES = [
-  { value: 'known', label: 'Known' },
-  { value: 'guided_blind', label: 'Guided-Blind' },
-  { value: 'assisted_blind', label: 'Assisted-Blind' },
-  { value: 'double_blind', label: 'Double-Blind' },
+  { value: 'known', labelKey: 'logEntry.pathType_known' },
+  { value: 'guided_blind', labelKey: 'logEntry.pathType_guided_blind' },
+  { value: 'assisted_blind', labelKey: 'logEntry.pathType_assisted_blind' },
+  { value: 'double_blind', labelKey: 'logEntry.pathType_double_blind' },
 ];
 
 function calcPathLength(waypoints) {
@@ -53,6 +53,9 @@ const WMO_CODES = {
 };
 
 function weatherCodeText(code) {
+  const key = 'weather.' + code;
+  const translated = I18n.t(key);
+  if (translated !== key) return translated;
   return WMO_CODES[code] || '';
 }
 
@@ -106,6 +109,9 @@ const App = {
   currentUser: null,
   currentSession: null,
   currentSessionData: null,
+  currentPage: null,
+  currentPageParams: null,
+  cachedSessions: null,
   map: null,
   markers: {},
   hidingPolyline: null,
@@ -143,14 +149,39 @@ const App = {
       }
     }
 
-    if (this.currentUser) {
-      this.nav('dashboard');
-    } else {
-      this.nav('login');
+    I18n.onReady.push(() => {
+      I18n.applyDOM();
+      if (this.currentUser) {
+        this.nav('dashboard');
+      } else {
+        this.nav('login');
+      }
+    });
+
+    await I18n.init();
+
+    const sel = document.getElementById('language-select');
+    if (sel) sel.value = I18n.locale;
+    document.addEventListener('change', (e) => {
+      if (e.target.id === 'language-select') {
+        I18n.setLocale(e.target.value);
+      }
+    });
+  },
+
+  onLocaleChange() {
+    const page = this.currentPage;
+    if (page === 'dashboard') {
+      this.renderSessionList();
+    } else if (page === 'session' && this.currentSession) {
+      this.updateSessionUI();
     }
   },
 
   nav(page, params) {
+    this.currentPage = page;
+    this.currentPageParams = params;
+
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const el = document.getElementById(`${page}-page`);
     if (el) el.classList.add('active');
@@ -199,7 +230,7 @@ const App = {
 
     const clientId = document.getElementById('login-page').dataset.clientId;
     if (!clientId) {
-      this.showSnackbar('Google Client ID not configured');
+      this.showSnackbar(I18n.t('login.googleNotConfigured'));
       return;
     }
 
@@ -229,9 +260,9 @@ const App = {
       const user = await API.googleLogin(accessToken);
       this.currentUser = user;
       this.nav('dashboard');
-      this.showSnackbar(`Signed in as ${user.name}`);
+      this.showSnackbar(I18n.t('login.signedInAs', { name: user.name }));
     } catch (e) {
-      this.showSnackbar('Login failed: ' + e.message);
+      this.showSnackbar(I18n.t('login.loginFailed', { message: e.message }));
     }
   },
 
@@ -250,17 +281,17 @@ const App = {
       const res = await API.getDogs();
       const dogs = res.dogs;
       if (dogs.length === 0) {
-        list.innerHTML = '<div class="empty-state" style="padding:12px;font-size:13px">No dogs yet.</div>';
+        list.innerHTML = `<div class="empty-state" style="padding:12px;font-size:13px">${I18n.t('dashboard.noDogs')}</div>`;
         return;
       }
       list.innerHTML = dogs.map(d => `
         <div class="dog-item">
           <span>${d.name}</span>
-          <button class="btn btn-sm btn-danger" onclick="App.deleteDog('${d.id}')">Remove</button>
+          <button class="btn btn-sm btn-danger" onclick="App.deleteDog('${d.id}')">${I18n.t('dashboard.remove')}</button>
         </div>
       `).join('');
     } catch (e) {
-      list.innerHTML = `<div class="empty-state" style="padding:12px;font-size:13px">Error: ${e.message}</div>`;
+      list.innerHTML = `<div class="empty-state" style="padding:12px;font-size:13px">${I18n.t('dogs.error', { message: e.message })}</div>`;
     }
   },
 
@@ -269,32 +300,32 @@ const App = {
       await API.deleteDog(id);
       this.renderDogs();
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
   // ========== DASHBOARD ==========
   async renderDashboard() {
     const list = document.getElementById('session-list');
-    list.innerHTML = '<div class="empty-state">Loading...</div>';
+    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
     document.getElementById('user-name').textContent = this.currentUser?.name || '';
 
     document.getElementById('create-session-btn').onclick = () => {
-      const name = prompt('Session name:');
+      const name = prompt(I18n.t('dashboard.sessionName'));
       if (name) {
         API.createSession(name).then(res => {
           this.nav('session', { id: res.session.id });
-        }).catch(e => this.showSnackbar(e.message));
+        }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
       }
     };
 
     document.getElementById('join-session-btn').onclick = () => {
-      const code = prompt('Enter invite code (e.g. MT-XXXXXX):');
+      const code = prompt(I18n.t('dashboard.enterCode'));
       if (code) {
         API.joinSession(code).then(res => {
           this.nav('session', { id: res.session.id });
-        }).catch(e => this.showSnackbar(e.message));
+        }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
       }
     };
 
@@ -315,9 +346,9 @@ const App = {
         const res = await API.updateProfile({ display_name: val });
         this.currentUser = res.user;
         API.setToken(res.token);
-        this.showSnackbar('Display name updated!');
+        this.showSnackbar(I18n.t('dashboard.displayNameUpdated'));
       } catch (e) {
-        this.showSnackbar(e.message);
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
 
@@ -330,7 +361,7 @@ const App = {
         input.value = '';
         this.renderDogs();
       } catch (e) {
-        this.showSnackbar(e.message);
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
 
@@ -338,27 +369,30 @@ const App = {
 
     try {
       const res = await API.getSessions();
-      const sessions = res.sessions;
-
-      if (sessions.length === 0) {
-        list.innerHTML = '<div class="empty-state">No sessions yet. Create one or join with a code!</div>';
-        return;
-      }
-
-      list.innerHTML = sessions.map(s => `
-        <div class="card session-card" data-id="${s.id}">
-          <h3>${s.name}</h3>
-          <div class="meta">
-            Status: <strong>${s.status}</strong> &middot;
-            Code: <strong>${s.code}</strong> &middot;
-            ${new Date(s.created_at).toLocaleDateString()}
-          </div>
-          <button class="btn btn-sm" onclick="App.nav('session', {id:'${s.id}'})">Open</button>
-        </div>
-      `).join('');
+      this.cachedSessions = res.sessions;
+      this.renderSessionList();
     } catch (e) {
-      list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
+  },
+
+  renderSessionList() {
+    const list = document.getElementById('session-list');
+    const sessions = this.cachedSessions;
+    if (!sessions || sessions.length === 0) {
+      list.innerHTML = `<div class="empty-state">${I18n.t('dashboard.noSessions')}</div>`;
+      return;
+    }
+    list.innerHTML = sessions.map(s => `
+      <div class="card session-card" data-id="${s.id}">
+        <h3>${s.name}</h3>
+        <div class="meta">
+          ${I18n.t('dashboard.code')}: <strong>${s.code}</strong> &middot;
+          ${new Date(s.created_at).toLocaleDateString()}
+        </div>
+        <button class="btn btn-sm" onclick="App.nav('session', {id:'${s.id}'})">${I18n.t('dashboard.open')}</button>
+      </div>
+    `).join('');
   },
 
   // ========== SESSION ==========
@@ -370,18 +404,11 @@ const App = {
       this.currentSession = res.session;
       this.currentSessionData = res;
 
-      if (res.session.status === 'completed') {
-        this.cleanupSession();
-        WS.disconnect();
-        this.nav('summary', { id: sessionId });
-        return;
-      }
-
       this.renderSessionUI(res);
       this.setupSessionMap();
       this.connectWS(sessionId);
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       this.nav('dashboard');
     }
   },
@@ -389,7 +416,7 @@ const App = {
   renderSessionUI(data) {
     const { session, members } = data;
     const me = members.find(m => m.id === this.currentUser.id);
-    const isMaster = me?.role === 'session_master';
+    const isMaster = me?.is_master === 1;
     const isLost = me?.role === 'lost_person';
     const isHandler = me?.role === 'dog_handler';
 
@@ -404,7 +431,7 @@ const App = {
 
     document.getElementById('copy-code-btn').onclick = () => {
       navigator.clipboard.writeText(session.code).then(() => {
-        this.showSnackbar('Code copied!');
+        this.showSnackbar(I18n.t('session.codeCopied'));
       });
     };
 
@@ -412,59 +439,46 @@ const App = {
       this.currentSessionData = r;
       this.updateSessionUI();
       WS.send({ type: 'role_changed', role: 'passive_member' });
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('role-lost-btn').onclick = () => API.changeRole(session.id, 'lost_person').then(r => {
       this.currentSessionData = r;
       this.updateSessionUI();
       WS.send({ type: 'role_changed', role: 'lost_person' });
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('role-handler-btn').onclick = () => API.changeRole(session.id, 'dog_handler').then(r => {
       this.currentSessionData = r;
       this.updateSessionUI();
       WS.send({ type: 'role_changed', role: 'dog_handler' });
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('start-hiding-btn').onclick = () => API.startHiding(session.id).then(() => {
-      this.showSnackbar('Hiding started! Walk to your hiding spot.');
+      this.showSnackbar(I18n.t('session.hidingStarted'));
       this.startPathTracking('hiding');
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('im-hidden-btn').onclick = () => API.imHidden(session.id, { waypoints: this.trackedWaypoints }).then(() => {
-      this.showSnackbar('You are hidden! Waiting for search.');
+      this.showSnackbar(I18n.t('session.youAreHidden'));
       this.stopAllTracking();
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('start-search-btn').onclick = () => API.startSearch(session.id).then(() => {
-      this.showSnackbar('Search started!');
+      this.showSnackbar(I18n.t('session.searchStarted'));
       this.startPathTracking('search');
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('found-btn').onclick = () => API.searchResult(session.id, 'found', { waypoints: this.trackedWaypoints }).then(res => {
-      this.showSnackbar('Person found! Session complete.');
+      this.showSnackbar(I18n.t('session.foundMsg'));
       this.stopAllTracking();
       this.offerLogEntry(res);
-    }).catch(e => this.showSnackbar(e.message));
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('fail-btn').onclick = () => API.searchResult(session.id, 'failed', { waypoints: this.trackedWaypoints }).then(res => {
-      this.showSnackbar('Search failed.');
+      this.showSnackbar(I18n.t('session.failedMsg'));
       this.stopAllTracking();
       this.offerLogEntry(res);
-    }).catch(e => this.showSnackbar(e.message));
-
-    document.getElementById('end-session-btn').onclick = async () => {
-      if (!confirm('End this session? Everyone will be redirected to the summary.')) return;
-      try {
-        await API.endSession(session.id);
-        const sid = session.id;
-        this.cleanupSession();
-        WS.disconnect();
-        this.nav('summary', { id: sid });
-      } catch (e) {
-        this.showSnackbar(e.message);
-      }
-    };
+    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
 
     document.getElementById('show-summary-btn').onclick = () => {
       this.cleanupSession();
@@ -504,7 +518,7 @@ const App = {
       path_length_meters: pathLength,
     };
 
-    if (confirm('Save this search to your mantrailing log?')) {
+    if (confirm(I18n.t('session.saveToLog'))) {
       this.cleanupSession();
       WS.disconnect();
       this.nav('log-entry', { prefill });
@@ -513,13 +527,17 @@ const App = {
 
   renderMembers(members) {
     const container = document.getElementById('member-list');
-    container.innerHTML = members.map(m => `
-      <div class="member-item">
-        <span class="dot" style="background:${this.getColorForUser(m.id)}"></span>
-        <strong>${m.name}</strong>
-        <span class="role-badge">${m.role}</span>
-      </div>
-    `).join('');
+    container.innerHTML = members.map(m => {
+      const roleLabel = I18n.t('roles.' + m.role) || m.role;
+      const masterBadge = m.is_master ? `<span class="master-badge" title="${I18n.t('roles.session_master')}">M</span>` : '';
+      return `
+        <div class="member-item">
+          <span class="dot" style="background:${this.getColorForUser(m.id)}"></span>
+          <strong>${m.name}</strong> ${masterBadge}
+          <span class="role-badge">${roleLabel}</span>
+        </div>
+      `;
+    }).join('');
 
     const select = document.getElementById('route-target-select');
     if (select) {
@@ -540,23 +558,23 @@ const App = {
     const me = members.find(m => m.id === this.currentUser.id);
     const isLost = me?.role === 'lost_person';
     const isHandler = me?.role === 'dog_handler';
-    const isMaster = me?.role === 'session_master';
-    const isCompleted = session?.status === 'completed';
 
     const hasLostPerson = members.some(m => m.role === 'lost_person');
     const hasHandler = members.some(m => m.role === 'dog_handler');
 
-    document.getElementById('role-passive-btn').style.display = !isCompleted && me?.role !== 'passive_member' ? '' : 'none';
-    document.getElementById('role-lost-btn').style.display = !isCompleted && !isLost && !hasLostPerson ? '' : 'none';
-    document.getElementById('role-handler-btn').style.display = !isCompleted && !isHandler && !hasHandler ? '' : 'none';
-    document.getElementById('end-session-btn').style.display = isMaster && !isCompleted ? '' : 'none';
-    document.getElementById('show-summary-btn').style.display = isCompleted ? '' : 'none';
+    document.getElementById('role-passive-btn').style.display = me?.role !== 'passive_member' ? '' : 'none';
+    document.getElementById('role-lost-btn').style.display = !isLost && !hasLostPerson ? '' : 'none';
+    document.getElementById('role-handler-btn').style.display = !isHandler && !hasHandler ? '' : 'none';
+    document.getElementById('show-summary-btn').style.display = '';
 
-    document.getElementById('hiding-controls').style.display = !isCompleted && isLost ? 'flex' : 'none';
-    document.getElementById('search-controls').style.display = !isCompleted && isHandler ? 'flex' : 'none';
+    document.getElementById('hiding-controls').style.display = isLost ? 'flex' : 'none';
+    document.getElementById('search-controls').style.display = isHandler ? 'flex' : 'none';
 
-    document.getElementById('your-role').textContent = `Your role: ${me?.role || 'none'}`;
+    document.getElementById('your-role').textContent = I18n.t('session.yourRole', { role: I18n.t('roles.' + (me?.role || 'none')) });
     this.renderMembers(members);
+
+    // Re-apply data-i18n attributes that may have been overwritten
+    I18n.applyDOM();
   },
 
   setupSessionMap() {
@@ -626,38 +644,26 @@ const App = {
 
     WS.on('route_assigned', (data) => {
       this.drawAssignedRoute(data.route.waypoints);
-      this.showSnackbar('You received a new route from the session master!');
+      this.showSnackbar(I18n.t('session.routeReceived'));
     });
 
     WS.on('hiding_started', () => {
-      this.showSnackbar('Lost person is now hiding...');
+      this.showSnackbar(I18n.t('session.lostPersonHiding'));
     });
 
     WS.on('hiding_ended', () => {
-      this.showSnackbar('Lost person is hidden!');
+      this.showSnackbar(I18n.t('session.lostPersonHidden'));
     });
 
     WS.on('search_started', () => {
-      this.showSnackbar('Search has begun!');
+      this.showSnackbar(I18n.t('session.searchBegun'));
     });
 
     WS.on('search_ended', (data) => {
-      this.showSnackbar(`Search ${data.result}!`);
-      if (data.result === 'found') {
-        this.currentSessionData.session.status = 'completed';
-        this.updateSessionUI();
-      }
+      const result = data.result === 'found' ? I18n.t('session.resultFound') : I18n.t('session.resultFailed');
+      this.showSnackbar(I18n.t('session.searchResult', { result }));
     });
 
-    WS.on('session_ended', () => {
-      this.showSnackbar('Session ended!');
-      const sessionId = this.currentSession?.id;
-      setTimeout(() => {
-        this.cleanupSession();
-        WS.disconnect();
-        this.nav('summary', { id: sessionId });
-      }, 1500);
-    });
   },
 
   // ========== MEMBER MARKERS ==========
@@ -755,11 +761,11 @@ const App = {
 
     toggleBtn.onclick = () => {
       this.isDrawing = !this.isDrawing;
-      toggleBtn.textContent = this.isDrawing ? 'Stop Drawing' : 'Draw Route';
+      toggleBtn.textContent = this.isDrawing ? I18n.t('session.stopDrawing') : I18n.t('session.drawRoute');
 
       if (this.isDrawing) {
         this.drawingWaypoints = [];
-        waypointCount.textContent = '0 points';
+        waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
 
         this.map.on('click', this.onMapClick);
@@ -779,7 +785,7 @@ const App = {
 
     this.onMapClick = (e) => {
       this.drawingWaypoints.push({ lat: e.latlng.lat, lng: e.latlng.lng });
-      waypointCount.textContent = `${this.drawingWaypoints.length} points`;
+      waypointCount.textContent = `${this.drawingWaypoints.length} ${I18n.t('session.points')}`;
       assignBtn.disabled = this.drawingWaypoints.length < 2;
 
       L.circleMarker([e.latlng.lat, e.latlng.lng], {
@@ -799,21 +805,20 @@ const App = {
           const snappedRes = await this.snapToRoads(waypoints);
           if (snappedRes) waypoints = snappedRes;
         } catch (e) {
-          this.showSnackbar('Snap failed, using freehand route');
+          this.showSnackbar(I18n.t('session.snapFailed'));
         }
       }
 
       try {
         await API.assignRoute(this.currentSession.id, targetId, waypoints, snapped);
-        this.showSnackbar('Route assigned!');
+        this.showSnackbar(I18n.t('session.routeAssigned'));
         this.drawingWaypoints = [];
-        waypointCount.textContent = '0 points';
+        waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
       } catch (e) {
-        this.showSnackbar(e.message);
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
-
   },
 
   async snapToRoads(waypoints) {
@@ -917,44 +922,45 @@ const App = {
 
       const container = document.getElementById('summary-content');
 
-      let html = `<div class="card"><h3>Details</h3><p>Status: ${session.status}</p>`;
-      html += `<p>Created: ${new Date(session.created_at).toLocaleString()}</p></div>`;
+      let html = `<div class="card"><h3>${I18n.t('summary.details')}</h3>`;
+      html += `<p>${I18n.t('summary.status', { status: session.status })}</p>`;
+      html += `<p>${I18n.t('summary.created', { date: new Date(session.created_at).toLocaleString() })}</p></div>`;
 
       if (hidingSessions.length) {
-        html += '<div class="card"><h3>Hiding Routes</h3>';
+        html += `<div class="card"><h3>${I18n.t('summary.hidingRoutes')}</h3>`;
         hidingSessions.forEach(h => {
           const waypoints = JSON.parse(h.waypoints || '[]');
           const duration = h.started_at && h.ended_at
-            ? Math.round((new Date(h.ended_at) - new Date(h.started_at)) / 1000 / 60) + ' min'
+            ? Math.round((new Date(h.ended_at) - new Date(h.started_at)) / 1000 / 60) + ' ' + I18n.t('summary.min')
             : 'N/A';
-          html += `<p><strong>${h.user_name}</strong> &middot; ${waypoints.length} points &middot; ${duration}</p>`;
+          html += `<p><strong>${h.user_name}</strong> &middot; ${I18n.t('summary.pointsCount', { count: waypoints.length })} &middot; ${duration}</p>`;
         });
         html += '</div>';
       }
 
       if (searchSessions.length) {
-        html += '<div class="card"><h3>Search Routes</h3>';
+        html += `<div class="card"><h3>${I18n.t('summary.searchRoutes')}</h3>`;
         searchSessions.forEach(s => {
           const waypoints = JSON.parse(s.waypoints || '[]');
           const duration = s.duration_seconds
-            ? Math.round(s.duration_seconds / 60) + ' min ' + (s.duration_seconds % 60) + ' sec'
+            ? Math.round(s.duration_seconds / 60) + ' ' + I18n.t('summary.min') + ' ' + (s.duration_seconds % 60) + ' sec'
             : 'N/A';
-          html += `<p><strong>${s.user_name}</strong> &middot; Result: ${s.result} &middot; Duration: ${duration}</p>`;
-          html += `<p>${waypoints.length} waypoints recorded</p>`;
+          html += `<p><strong>${s.user_name}</strong> &middot; ${I18n.t('summary.result', { result: s.result })} &middot; ${I18n.t('summary.duration', { duration })}</p>`;
+          html += `<p>${I18n.t('summary.waypoints', { count: waypoints.length })}</p>`;
         });
         html += '</div>';
       }
 
       if (routes.length) {
-        html += '<div class="card"><h3>Assigned Routes</h3>';
+        html += `<div class="card"><h3>${I18n.t('summary.assignedRoutes')}</h3>`;
         routes.forEach(r => {
           const waypoints = JSON.parse(r.waypoints);
-          html += `<p>To: <strong>${r.assigned_to_name}</strong> &middot; ${waypoints.length} points ${r.snapped ? '(snapped)' : ''}</p>`;
+          html += `<p>To: <strong>${r.assigned_to_name}</strong> &middot; ${I18n.t('summary.pointsCount', { count: waypoints.length })} ${r.snapped ? I18n.t('summary.snapped') : ''}</p>`;
         });
         html += '</div>';
       }
 
-      html += '<button class="btn btn-secondary" onclick="App.nav(\'dashboard\')">Back to Dashboard</button>';
+      html += `<button class="btn btn-secondary" onclick="App.nav('dashboard')">${I18n.t('summary.backToDashboard')}</button>`;
 
       container.innerHTML = html;
 
@@ -1004,7 +1010,7 @@ const App = {
 
       setTimeout(() => this.summaryMap.invalidateSize(), 500);
     } catch (e) {
-      document.getElementById('summary-content').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+      document.getElementById('summary-content').innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
   },
 
@@ -1017,14 +1023,14 @@ const App = {
     };
 
     const list = document.getElementById('log-entries-list');
-    list.innerHTML = '<div class="empty-state">Loading...</div>';
+    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
     try {
       const res = await API.getLogEntries();
       const entries = res.entries;
 
       if (entries.length === 0) {
-        list.innerHTML = '<div class="empty-state">No log entries yet.</div>';
+        list.innerHTML = `<div class="empty-state">${I18n.t('log.noEntries')}</div>`;
         return;
       }
 
@@ -1041,22 +1047,22 @@ const App = {
             <div class="meta">
               ${e.place_name ? e.place_name + ' &middot; ' : ''}
               ${e.path_type ? e.path_type.replace(/_/g, ' ') + ' &middot; ' : ''}
-              ${e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' min' : ''}
+              ${e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' ' + I18n.t('summary.min') : ''}
               ${e.path_length_meters ? ' &middot; ' + e.path_length_meters + ' m' : ''}
             </div>
             <div class="meta">
-              ${difficulties.length ? 'Difficulties: ' + difficulties.join(', ') : ''}
-              ${feelings.length ? 'Feelings: ' + feelings.join(', ') : ''}
+              ${difficulties.length ? I18n.t('logDetail.difficulties') + ': ' + difficulties.join(', ') : ''}
+              ${feelings.length ? I18n.t('logDetail.feelings') + ': ' + feelings.join(', ') : ''}
             </div>
             <div style="margin-top:8px">
-              <button class="btn btn-sm" onclick="event.stopPropagation();App.editLogEntry('${e.id}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteLogEntry('${e.id}')">Delete</button>
+              <button class="btn btn-sm" onclick="event.stopPropagation();App.editLogEntry('${e.id}')">${I18n.t('log.edit')}</button>
+              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteLogEntry('${e.id}')">${I18n.t('log.delete')}</button>
             </div>
           </div>
         `;
       }).join('');
     } catch (e) {
-      list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
   },
 
@@ -1068,24 +1074,25 @@ const App = {
         this.nav('log-entry', { entryId: id, prefill: entry });
       }
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
   async deleteLogEntry(id) {
-    if (!confirm('Delete this log entry?')) return;
+    if (!confirm(I18n.t('log.deleteConfirm'))) return;
     try {
       await API.deleteLogEntry(id);
+      this.showSnackbar(I18n.t('log.entryDeleted'));
       this.renderLog();
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
   // ========== LOG DETAIL VIEW ==========
   async renderLogDetail(id) {
     const container = document.getElementById('log-detail-content');
-    container.innerHTML = '<div class="empty-state">Loading...</div>';
+    container.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
     document.getElementById('back-from-detail-btn').onclick = () => this.nav('log');
 
@@ -1105,8 +1112,8 @@ const App = {
               <p style="font-size:13px;color:#888">${date}</p>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-sm" onclick="App.editLogEntryFromDetail('${e.id}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntryFromDetail('${e.id}')">Delete</button>
+              <button class="btn btn-sm" onclick="App.editLogEntryFromDetail('${e.id}')">${I18n.t('log.edit')}</button>
+              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntryFromDetail('${e.id}')">${I18n.t('log.delete')}</button>
             </div>
           </div>
           <hr style="margin:12px 0" />
@@ -1114,14 +1121,14 @@ const App = {
       `;
 
       const fields = [
-        ['Duration', e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' min ' + (e.search_duration_seconds % 60) + ' sec' : null],
-        ['Path Length', e.path_length_meters ? e.path_length_meters + ' m' : null],
-        ['Path Type', e.path_type ? e.path_type.replace(/_/g, ' ') : null],
-        ['Place', e.place_name || (e.place_lat != null && e.place_lng != null ? `${e.place_lat.toFixed(6)}, ${e.place_lng.toFixed(6)}` : null)],
-        ['Weather', e.weather_conditions || null],
-        ['Difficulties', difficulties.length ? difficulties.join(', ') : null],
-        ['Feelings', feelings.length ? feelings.join(', ') : null],
-        ['Notes', e.notes || null],
+        [I18n.t('logDetail.duration'), e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' ' + I18n.t('summary.min') + ' ' + (e.search_duration_seconds % 60) + ' sec' : null],
+        [I18n.t('logDetail.pathLength'), e.path_length_meters ? e.path_length_meters + ' m' : null],
+        [I18n.t('logDetail.pathType'), e.path_type ? e.path_type.replace(/_/g, ' ') : null],
+        [I18n.t('logDetail.place'), e.place_name || (e.place_lat != null && e.place_lng != null ? `${e.place_lat.toFixed(6)}, ${e.place_lng.toFixed(6)}` : null)],
+        [I18n.t('logDetail.weather'), e.weather_conditions || null],
+        [I18n.t('logDetail.difficulties'), difficulties.length ? difficulties.join(', ') : null],
+        [I18n.t('logDetail.feelings'), feelings.length ? feelings.join(', ') : null],
+        [I18n.t('logDetail.notes'), e.notes || null],
       ];
 
       fields.forEach(([label, val]) => {
@@ -1138,7 +1145,7 @@ const App = {
         html += `<div id="detail-map" style="height:300px;border-radius:12px;margin-bottom:16px"></div>`;
       }
 
-      html += `<button class="btn btn-secondary" onclick="App.nav('log')">Back to Log</button>`;
+      html += `<button class="btn btn-secondary" onclick="App.nav('log')">${I18n.t('summary.backToLog')}</button>`;
 
       container.innerHTML = html;
 
@@ -1152,7 +1159,7 @@ const App = {
         setTimeout(() => detailMap.invalidateSize(), 300);
       }
     } catch (e) {
-      container.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+      container.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
   },
 
@@ -1161,17 +1168,18 @@ const App = {
       const res = await API.getLogEntry(id);
       this.nav('log-entry', { entryId: id, prefill: res.entry });
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
   async deleteLogEntryFromDetail(id) {
-    if (!confirm('Delete this log entry?')) return;
+    if (!confirm(I18n.t('log.deleteConfirm'))) return;
     try {
       await API.deleteLogEntry(id);
+      this.showSnackbar(I18n.t('log.entryDeleted'));
       this.nav('log');
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
@@ -1182,19 +1190,20 @@ const App = {
     const isEdit = !!params.entryId;
     const prefill = params.prefill || {};
 
-    document.getElementById('log-entry-title').textContent = isEdit ? 'Edit Log Entry' : 'New Log Entry';
+    document.getElementById('log-entry-title').textContent = isEdit ? I18n.t('logEntry.editTitle') : I18n.t('logEntry.newTitle');
     document.getElementById('cancel-log-entry-btn').onclick = () => this.nav('log');
 
     const deleteBtn = document.getElementById('delete-log-entry-btn');
     deleteBtn.style.display = isEdit ? '' : 'none';
     if (isEdit) {
       deleteBtn.onclick = async () => {
-        if (!confirm('Delete this log entry?')) return;
+        if (!confirm(I18n.t('log.deleteConfirm'))) return;
         try {
           await API.deleteLogEntry(params.entryId);
+          this.showSnackbar(I18n.t('log.entryDeleted'));
           this.nav('log');
         } catch (e) {
-          this.showSnackbar(e.message);
+          this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
         }
       };
     }
@@ -1204,15 +1213,15 @@ const App = {
     try {
       const dogsRes = await API.getDogs();
       const dogs = dogsRes.dogs;
-      dogSelect.innerHTML = '<option value="">Select a dog...</option>' +
+      dogSelect.innerHTML = `<option value="">${I18n.t('logEntry.selectDog')}</option>` +
         dogs.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
     } catch (e) {
       console.error('Failed to load dogs:', e);
     }
 
     // Populate checkboxes
-    this.renderCheckboxGroup('le-difficulties', LOG_DIFFICULTIES);
-    this.renderCheckboxGroup('le-feelings', LOG_FEELINGS);
+    this.renderCheckboxGroup('le-difficulties', LOG_DIFFICULTIES, 'difficulties');
+    this.renderCheckboxGroup('le-feelings', LOG_FEELINGS, 'feelings');
 
     // Fill form — handler name is always the current user's display name
     const handlerDisplay = this.currentUser?.display_name || this.currentUser?.name || '';
@@ -1220,7 +1229,6 @@ const App = {
     if (prefill.dog_name && prefill.dog_name !== '') {
       dogSelect.value = prefill.dog_name;
     } else if (dogSelect.options.length === 2) {
-      // Only one dog, pre-select it
       dogSelect.value = dogSelect.options[1].value;
     }
     document.getElementById('le-search-date').value = prefill.search_date || '';
@@ -1282,14 +1290,17 @@ const App = {
     document.getElementById('save-log-entry-btn').onclick = (e) => this.saveLogEntry(e);
   },
 
-  renderCheckboxGroup(containerId, options) {
+  renderCheckboxGroup(containerId, options, group) {
     const container = document.getElementById(containerId);
-    container.innerHTML = options.map(opt => `
-      <label class="checkbox-label">
-        <input type="checkbox" value="${opt}" />
-        ${opt.replace(/_/g, ' ')}
-      </label>
-    `).join('');
+    container.innerHTML = options.map(opt => {
+      const label = I18n.t(`${group}.${opt}`);
+      return `
+        <label class="checkbox-label">
+          <input type="checkbox" value="${opt}" />
+          ${label || opt.replace(/_/g, ' ')}
+        </label>
+      `;
+    }).join('');
   },
 
   getCheckedValues(containerId) {
@@ -1368,23 +1379,23 @@ const App = {
     if (this.logEntryPrefill?.search_session_id) data.search_session_id = this.logEntryPrefill.search_session_id;
 
     if (!data.handler_name || !data.dog_name || !data.search_date || !data.search_time) {
-      this.showSnackbar('Handler name, dog, date, and time are required');
+      this.showSnackbar(I18n.t('logEntry.required'));
       return;
     }
 
     try {
       if (this.logEntryEditId) {
         await API.updateLogEntry(this.logEntryEditId, data);
-        this.showSnackbar('Entry updated!');
+        this.showSnackbar(I18n.t('session.entryUpdated'));
       } else {
         await API.createLogEntry(data);
-        this.showSnackbar('Entry saved!');
+        this.showSnackbar(I18n.t('session.entrySaved'));
       }
       this.logEntryPrefill = null;
       this.logEntryEditId = null;
       this.nav('log');
     } catch (e) {
-      this.showSnackbar(e.message);
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
@@ -1411,6 +1422,8 @@ const App = {
     this.locationPathType = null;
   },
 };
+
+window.App = App;
 
 document.addEventListener('DOMContentLoaded', () => {
   App.init();

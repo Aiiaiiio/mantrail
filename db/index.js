@@ -15,5 +15,8 @@ db.exec(schema);
 try {
   db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
 } catch (e) {}
+try {
+  db.exec("ALTER TABLE session_members ADD COLUMN is_master INTEGER DEFAULT 0");
+} catch (e) {}
 
 module.exports = { db };

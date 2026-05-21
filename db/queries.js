@@ -28,9 +28,10 @@ const q = {
     ORDER BY s.created_at DESC`),
   updateSessionStatus: db.prepare('UPDATE sessions SET status = ? WHERE id = ?'),
 
-  insertMember: db.prepare('INSERT OR IGNORE INTO session_members (id, session_id, user_id, role, joined_at) VALUES (?, ?, ?, ?, ?)'),
+  insertMember: db.prepare('INSERT OR IGNORE INTO session_members (id, session_id, user_id, role, is_master, joined_at) VALUES (?, ?, ?, ?, ?, ?)'),
+  updateMemberMaster: db.prepare('UPDATE session_members SET is_master = 1 WHERE session_id = ? AND user_id = ?'),
   findMember: db.prepare('SELECT * FROM session_members WHERE session_id = ? AND user_id = ?'),
-  findSessionMembers: db.prepare(`SELECT u.id, u.name, u.email, u.avatar_url, sm.role, sm.joined_at
+  findSessionMembers: db.prepare(`SELECT u.id, u.name, u.email, u.avatar_url, sm.role, sm.is_master, sm.joined_at
     FROM session_members sm INNER JOIN users u ON u.id = sm.user_id
     WHERE sm.session_id = ?`),
   countMembersInRole: db.prepare('SELECT COUNT(*) as count FROM session_members WHERE session_id = ? AND role = ?'),
@@ -76,6 +77,13 @@ const q = {
   findLogEntries: db.prepare('SELECT * FROM log_entries WHERE user_id = ? ORDER BY created_at DESC'),
   findLogEntryById: db.prepare('SELECT * FROM log_entries WHERE id = ?'),
   deleteLogEntry: db.prepare('DELETE FROM log_entries WHERE id = ? AND user_id = ?'),
+
+  findOldSessions: db.prepare("SELECT id FROM sessions WHERE created_at < datetime('now', '-30 days')"),
+  deleteSessionMembers: db.prepare('DELETE FROM session_members WHERE session_id = ?'),
+  deleteHidingSessions: db.prepare('DELETE FROM hiding_sessions WHERE session_id = ?'),
+  deleteSearchSessions: db.prepare('DELETE FROM search_sessions WHERE session_id = ?'),
+  deleteAssignedRoutes: db.prepare('DELETE FROM assigned_routes WHERE session_id = ?'),
+  deleteSession: db.prepare('DELETE FROM sessions WHERE id = ?'),
 };
 
 module.exports = { q, generateCode, now, uuid };

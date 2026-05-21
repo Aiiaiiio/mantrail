@@ -65,6 +65,11 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .member-item .dot {
   width: 8px; height: 8px; border-radius: 50%; display: inline-block;
 }
+.master-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #136AEC; color: #fff; font-size: 11px; font-weight: bold;
+}
 
 #route-draw-panel {
   background: #fff; border-radius: 12px; padding: 12px;
@@ -85,6 +90,11 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 }
 .top-bar .user-info { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .top-bar .avatar { width: 32px; height: 32px; border-radius: 50%; }
+.lang-select {
+  font-size: 18px; padding: 2px 4px; border: 1px solid #ddd;
+  border-radius: 6px; background: #fff; cursor: pointer;
+  line-height: 1; appearance: auto; -webkit-appearance: auto;
+}
 
 .empty-state { text-align: center; padding: 40px; color: #999; }
 

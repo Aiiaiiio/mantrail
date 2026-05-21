@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mantrail App</title>
+  <title data-i18n="app.title">Mantrail Tracker</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -16,50 +16,54 @@
 
     <!-- LOGIN -->
     <div id="login-page" class="page active" data-client-id="">
-      <h1>Mantrail Tracker</h1>
-      <p>Real-time mantrailing session management</p>
-      <button class="btn" id="google-signin-btn" style="font-size:16px;padding:12px 32px">Sign in with Google</button>
+      <h1 data-i18n="app.title">Mantrail Tracker</h1>
+      <p data-i18n="app.tagline">Real-time mantrailing session management</p>
+      <button class="btn" id="google-signin-btn" style="font-size:16px;padding:12px 32px" data-i18n="login.signInWithGoogle">Sign in with Google</button>
     </div>
 
     <!-- DASHBOARD -->
     <div id="dashboard-page" class="page">
       <div class="top-bar">
-        <h1>Sessions</h1>
+        <h1 data-i18n="dashboard.sessions">Sessions</h1>
         <div class="user-info">
           <span id="user-name"></span>
-          <button class="btn btn-sm btn-secondary" id="logout-btn">Sign Out</button>
+          <select id="language-select" class="lang-select" title="Language">
+            <option value="hu">&#127469;&#127482;</option>
+            <option value="en">&#127468;&#127463;</option>
+          </select>
+          <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
         </div>
       </div>
 
       <div class="row" style="margin-bottom:16px">
-        <button class="btn" id="create-session-btn">+ New Session</button>
-        <button class="btn btn-secondary" id="join-session-btn">Join with Code</button>
-        <button class="btn btn-secondary" id="open-log-btn">My Log</button>
+        <button class="btn" id="create-session-btn" data-i18n="dashboard.newSession">+ New Session</button>
+        <button class="btn btn-secondary" id="join-session-btn" data-i18n="dashboard.joinWithCode">Join with Code</button>
+        <button class="btn btn-secondary" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
       </div>
 
       <div id="session-list"></div>
 
       <hr style="margin:20px 0" />
 
-      <h2>Profile</h2>
       <div class="card" style="margin-bottom:16px">
+        <h2 data-i18n="dashboard.profile">Profile</h2>
         <div class="form-group">
-          <label>Display Name</label>
+          <label data-i18n="dashboard.displayName">Display Name</label>
           <div class="row" style="align-items:center">
             <input type="text" id="display-name-input" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
-            <button class="btn btn-sm" id="save-display-name-btn">Save</button>
+            <button class="btn btn-sm" id="save-display-name-btn" data-i18n="dashboard.save">Save</button>
           </div>
-          <p style="font-size:12px;color:#888;margin-top:4px">Used as handler name in log entries. Defaults to your Google account name.</p>
+          <p style="font-size:12px;color:#888;margin-top:4px" data-i18n="dashboard.displayNameHint">Used as handler name in log entries. Defaults to your Google account name.</p>
         </div>
       </div>
 
       <hr style="margin:20px 0" />
 
-      <h2>My Dogs</h2>
+      <h2 data-i18n="dashboard.myDogs">My Dogs</h2>
       <div id="dogs-section">
         <div class="row" style="margin-bottom:12px">
-          <input type="text" id="new-dog-name" placeholder="Dog name" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
-          <button class="btn btn-sm" id="add-dog-btn">Add Dog</button>
+          <input type="text" id="new-dog-name" data-i18n="dashboard.dogName" placeholder="Dog name" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
+          <button class="btn btn-sm" id="add-dog-btn" data-i18n="dashboard.addDog">Add Dog</button>
         </div>
         <div id="dogs-list"></div>
       </div>
@@ -71,11 +75,12 @@
         <div>
           <h1 id="session-title"></h1>
           <span style="font-size:13px;color:#777">
-            Code: <strong id="session-code"></strong>
-            <button class="btn btn-sm btn-secondary" id="copy-code-btn" style="margin-left:8px">Copy</button>
+            <span data-i18n="session.code">Code:</span>
+            <strong id="session-code"></strong>
+            <button class="btn btn-sm btn-secondary" id="copy-code-btn" style="margin-left:8px" data-i18n="session.copy">Copy</button>
           </span>
         </div>
-        <button class="btn btn-sm btn-secondary" id="back-to-dashboard">Back</button>
+        <button class="btn btn-sm btn-secondary" id="back-to-dashboard" data-i18n="session.back">Back</button>
       </div>
 
       <div id="member-list"></div>
@@ -84,43 +89,42 @@
 
       <div id="action-buttons" style="display:none">
         <div id="session-toolbar">
-          <button class="btn btn-sm btn-secondary" id="role-passive-btn">Be Passive Member</button>
-          <button class="btn btn-sm" id="role-lost-btn">Be Lost Person</button>
-          <button class="btn btn-sm" id="role-handler-btn">Be Dog Handler</button>
-          <button class="btn btn-sm btn-secondary" id="show-summary-btn">View Summary</button>
-          <button class="btn btn-sm btn-danger" id="end-session-btn">End Session</button>
+          <button class="btn btn-sm btn-secondary" id="role-passive-btn" data-i18n="session.bePassive">Be Passive Member</button>
+          <button class="btn btn-sm" id="role-lost-btn" data-i18n="session.beLost">Be Lost Person</button>
+          <button class="btn btn-sm" id="role-handler-btn" data-i18n="session.beHandler">Be Dog Handler</button>
+          <button class="btn btn-sm btn-secondary" id="show-summary-btn" data-i18n="session.viewSummary">View Summary</button>
         </div>
 
         <div id="hiding-controls" class="row" style="display:none;margin-bottom:8px">
-          <button class="btn btn-sm" id="start-hiding-btn">Start Hiding</button>
-          <button class="btn btn-sm btn-danger" id="im-hidden-btn">I'm Hidden</button>
+          <button class="btn btn-sm" id="start-hiding-btn" data-i18n="session.startHiding">Start Hiding</button>
+          <button class="btn btn-sm btn-danger" id="im-hidden-btn" data-i18n="session.imHidden">I'm Hidden</button>
         </div>
 
         <div id="search-controls" class="row" style="display:none;margin-bottom:8px">
-          <button class="btn btn-sm" id="start-search-btn">Start Search</button>
-          <button class="btn btn-sm btn-success" id="found-btn">Found!</button>
-          <button class="btn btn-sm btn-danger" id="fail-btn">Failed</button>
+          <button class="btn btn-sm" id="start-search-btn" data-i18n="session.startSearch">Start Search</button>
+          <button class="btn btn-sm btn-success" id="found-btn" data-i18n="session.found">Found!</button>
+          <button class="btn btn-sm btn-danger" id="fail-btn" data-i18n="session.failed">Failed</button>
         </div>
       </div>
 
       <div style="margin-bottom:8px">
-        <button class="btn btn-sm btn-secondary" id="jump-to-location-btn">Jump to my location</button>
+        <button class="btn btn-sm btn-secondary" id="jump-to-location-btn" data-i18n="session.jumpToLocation">Jump to my location</button>
       </div>
 
       <div id="route-draw-section" style="display:none;margin-bottom:12px">
         <div id="route-draw-panel">
-          <strong>Assign Route</strong>
+          <strong data-i18n="session.assignRoute">Assign Route</strong>
           <div class="row" style="margin-top:8px;align-items:center">
             <select id="route-target-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ddd">
-              <option value="">Select member...</option>
+              <option value="" data-i18n="session.selectMember">Select member...</option>
             </select>
-            <button class="btn btn-sm btn-secondary" id="toggle-draw-btn">Draw Route</button>
-            <button class="btn btn-sm btn-success" id="assign-route-btn" disabled>Assign</button>
+            <button class="btn btn-sm btn-secondary" id="toggle-draw-btn" data-i18n="session.drawRoute">Draw Route</button>
+            <button class="btn btn-sm btn-success" id="assign-route-btn" disabled data-i18n="session.assign">Assign</button>
           </div>
           <div style="margin-top:6px;font-size:13px;color:#666">
-            <span id="waypoint-count">0 points</span>
+            <span id="waypoint-count">0 <span data-i18n="session.point">point</span>s</span>
             &middot;
-            <label><input type="checkbox" id="snap-toggle"> Snap to roads</label>
+            <label><input type="checkbox" id="snap-toggle"> <span data-i18n="session.snapToRoads">Snap to roads</span></label>
           </div>
         </div>
       </div>
@@ -140,90 +144,88 @@
     <!-- LOG LIST -->
     <div id="log-page" class="page">
       <div class="top-bar">
-        <h1>Mantrailing Log</h1>
-        <div>
-          <button class="btn btn-sm btn-secondary" id="back-from-log-btn">Back</button>
-        </div>
+        <h1 data-i18n="log.title">Mantrailing Log</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-log-btn" data-i18n="log.back">Back</button>
       </div>
-      <button class="btn" id="new-log-entry-btn">+ New Entry</button>
+      <button class="btn" id="new-log-entry-btn" data-i18n="log.newEntry">+ New Entry</button>
       <div id="log-entries-list" style="margin-top:12px"></div>
     </div>
 
     <!-- LOG ENTRY FORM -->
     <div id="log-entry-page" class="page">
       <div class="top-bar">
-        <h1 id="log-entry-title">Log Entry</h1>
-        <button class="btn btn-sm btn-secondary" id="cancel-log-entry-btn">Cancel</button>
+        <h1 id="log-entry-title">New Log Entry</h1>
+        <button class="btn btn-sm btn-secondary" id="cancel-log-entry-btn" data-i18n="logEntry.cancel">Cancel</button>
       </div>
       <form id="log-entry-form" style="max-width:600px">
         <div class="form-group">
-          <label>Handler</label>
+          <label data-i18n="logEntry.handler">Handler</label>
           <input type="text" id="le-handler-name" readonly style="background:#f5f5f5;cursor:default" />
         </div>
         <div class="form-group">
-          <label>Dog</label>
+          <label data-i18n="logEntry.dog">Dog</label>
           <select id="le-dog-name" required>
-            <option value="">Select a dog...</option>
+            <option value="" data-i18n="logEntry.selectDog">Select a dog...</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Date</label>
+          <label data-i18n="logEntry.date">Date</label>
           <input type="date" id="le-search-date" required />
         </div>
         <div class="form-group">
-          <label>Time</label>
+          <label data-i18n="logEntry.time">Time</label>
           <input type="time" id="le-search-time" required />
         </div>
         <div class="form-group">
-          <label>Place</label>
-          <input type="text" id="le-place-name" placeholder="Location name (optional)" />
+          <label data-i18n="logEntry.place">Place</label>
+          <input type="text" id="le-place-name" data-i18n="logEntry.placeHint" placeholder="Location name (optional)" />
         </div>
         <div class="form-group">
-          <label>Search Duration (minutes)</label>
+          <label data-i18n="logEntry.duration">Search Duration (minutes)</label>
           <input type="number" id="le-duration" min="0" step="0.1" />
         </div>
         <div class="form-group">
-          <label>Path Length (meters)</label>
+          <label data-i18n="logEntry.pathLength">Path Length (meters)</label>
           <input type="number" id="le-path-length" min="0" step="1" />
         </div>
         <div class="form-group">
-          <label>Weather Conditions</label>
-          <input type="text" id="le-weather" placeholder="e.g. sunny, 15°C, light wind" />
+          <label data-i18n="logEntry.weather">Weather Conditions</label>
+          <input type="text" id="le-weather" data-i18n="logEntry.weatherHint" placeholder="e.g. sunny, 15°C, light wind" />
         </div>
         <div class="form-group">
-          <label>Path Type</label>
+          <label data-i18n="logEntry.pathType">Path Type</label>
           <select id="le-path-type">
-            <option value="">Select...</option>
-            <option value="known">Known</option>
-            <option value="guided_blind">Guided-Blind</option>
-            <option value="assisted_blind">Assisted-Blind</option>
-            <option value="double_blind">Double-Blind</option>
+            <option value="" data-i18n="logEntry.selectPathType">Select...</option>
+            <option value="known" data-i18n="logEntry.pathType_known">Known</option>
+            <option value="guided_blind" data-i18n="logEntry.pathType_guided_blind">Guided-Blind</option>
+            <option value="assisted_blind" data-i18n="logEntry.pathType_assisted_blind">Assisted-Blind</option>
+            <option value="double_blind" data-i18n="logEntry.pathType_double_blind">Double-Blind</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Difficulties</label>
+          <label data-i18n="logEntry.difficulties">Difficulties</label>
           <div id="le-difficulties" class="checkbox-group"></div>
-          <input type="text" id="le-difficulties-custom" placeholder="+ custom difficulty" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
+          <input type="text" id="le-difficulties-custom" data-i18n="logEntry.difficultiesCustom" placeholder="+ custom difficulty" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
         </div>
         <div class="form-group">
-          <label>Handler Feelings</label>
+          <label data-i18n="logEntry.feelings">Handler Feelings</label>
           <div id="le-feelings" class="checkbox-group"></div>
-          <input type="text" id="le-feelings-custom" placeholder="+ custom feeling" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
+          <input type="text" id="le-feelings-custom" data-i18n="logEntry.feelingsCustom" placeholder="+ custom feeling" style="margin-top:4px;padding:6px;border-radius:6px;border:1px solid #ddd;width:100%;font-size:13px" />
         </div>
         <div class="form-group">
-          <label>Notes</label>
+          <label data-i18n="logEntry.notes">Notes</label>
           <textarea id="le-notes" rows="4" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px"></textarea>
         </div>
 
         <div id="le-map-section" style="margin-bottom:16px">
-          <label style="display:block;margin-bottom:4px;font-size:0.9rem;color:#555">Click on map to set search location</label>
+          <label style="display:block;margin-bottom:4px;font-size:0.9rem;color:#555" data-i18n="logEntry.clickMap">Click on map to set search location</label>
           <div id="le-map" style="height:300px;border-radius:8px;border:1px solid #ddd"></div>
-          <p id="le-coords" style="font-size:12px;color:#888;margin-top:4px">No location set</p>
+          <p id="le-coords" style="font-size:12px;color:#888;margin-top:4px" data-i18n="logEntry.noLocation">No location set</p>
         </div>
 
         <div class="row" style="margin-top:16px">
-          <button type="button" class="btn" id="save-log-entry-btn">Save Entry</button>
-          <button type="button" class="btn btn-secondary" id="delete-log-entry-btn" style="display:none">Delete</button>
+          <button type="button" class="btn" id="save-log-entry-btn" data-i18n="logEntry.save">Save Entry</button>
+          <button type="button" class="btn btn-secondary" id="delete-log-entry-btn" style="display:none" data-i18n="logEntry.delete">Delete</button>
         </div>
       </form>
     </div>
@@ -231,8 +233,8 @@
     <!-- LOG DETAIL -->
     <div id="log-detail-page" class="page">
       <div class="top-bar">
-        <h1>Log Entry</h1>
-        <button class="btn btn-sm btn-secondary" id="back-from-detail-btn">Back</button>
+        <h1 data-i18n="logDetail.title">Log Entry</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-detail-btn" data-i18n="log.back">Back</button>
       </div>
       <div id="log-detail-content"></div>
     </div>
@@ -240,6 +242,7 @@
   </div>
 
   <script src="api.js"></script>
+  <script src="i18n.js"></script>
   <script src="ws.js"></script>
   <script src="app.js"></script>
 </body>
