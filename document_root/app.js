@@ -427,9 +427,7 @@ const App = {
     const lastWp = waypoints.length > 0 ? waypoints[waypoints.length - 1] : null;
     const pathLength = calcPathLength(waypoints);
 
-    const handlerName = this.currentUser?.display_name || this.currentUser?.name || '';
     const prefill = {
-      handler_name: handlerName,
       session_id: this.currentSession?.id || '',
       search_session_id: search.id,
       place_lat: lastWp?.lat ?? null,
@@ -1057,8 +1055,9 @@ const App = {
     this.renderCheckboxGroup('le-difficulties', LOG_DIFFICULTIES);
     this.renderCheckboxGroup('le-feelings', LOG_FEELINGS);
 
-    // Fill form
-    document.getElementById('le-handler-name').value = prefill.handler_name || '';
+    // Fill form — handler name is always the current user's display name
+    const handlerDisplay = this.currentUser?.display_name || this.currentUser?.name || '';
+    document.getElementById('le-handler-name').value = handlerDisplay;
     if (prefill.dog_name && prefill.dog_name !== '') {
       dogSelect.value = prefill.dog_name;
     } else if (dogSelect.options.length === 2) {
@@ -1165,7 +1164,7 @@ const App = {
     e.preventDefault();
 
     const data = {
-      handler_name: document.getElementById('le-handler-name').value.trim(),
+      handler_name: this.currentUser?.display_name || this.currentUser?.name || '',
       dog_name: document.getElementById('le-dog-name').value,
       search_date: document.getElementById('le-search-date').value,
       search_time: document.getElementById('le-search-time').value,
