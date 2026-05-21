@@ -1258,12 +1258,21 @@ const App = {
     // Setup mini map
     this.setupLogEntryMap(prefill);
 
-    // Fetch weather from Open-Meteo if coordinates are set and weather is empty
+    // Fetch weather from Open-Meteo if weather field is empty
     const weatherInput = document.getElementById('le-weather');
-    if (!weatherInput.value && prefill.place_lat != null && prefill.place_lng != null) {
-      fetchWeather(prefill.place_lat, prefill.place_lng, prefill.search_date).then(w => {
+    if (!weatherInput.value) {
+      let wlat = prefill.place_lat, wlng = prefill.place_lng;
+      if (wlat == null || wlng == null) {
+        try {
+          const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+          wlat = pos.coords.latitude;
+          wlng = pos.coords.longitude;
+        } catch (e) {}
+      }
+      if (wlat != null && wlng != null) {
+        const w = await fetchWeather(wlat, wlng, prefill.search_date);
         if (w) weatherInput.value = w;
-      });
+      }
     }
 
     // Store metadata for submit
