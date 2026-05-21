@@ -87,6 +87,7 @@ const API = {
 
   // Log
   getLogEntries() { return this.get('/api/log'); },
+  getLogEntry(id) { return this.get(`/api/log/${id}`); },
   createLogEntry(data) { return this.post('/api/log', data); },
   updateLogEntry(id, data) { return this.put(`/api/log/${id}`, data); },
   deleteLogEntry(id) { return this.del(`/api/log/${id}`); },

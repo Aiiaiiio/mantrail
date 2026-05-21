@@ -39,6 +39,69 @@ function toLocalTimeInput(iso) {
   return d.toTimeString().slice(0, 5);
 }
 
+const WMO_CODES = {
+  0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+  45: 'Foggy', 48: 'Depositing rime fog',
+  51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+  56: 'Light freezing drizzle', 57: 'Dense freezing drizzle',
+  61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+  66: 'Light freezing rain', 67: 'Heavy freezing rain',
+  71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow', 77: 'Snow grains',
+  80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+  85: 'Slight snow showers', 86: 'Heavy snow showers',
+  95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail',
+};
+
+function weatherCodeText(code) {
+  return WMO_CODES[code] || '';
+}
+
+async function fetchWeather(lat, lng, dateStr) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    if (dateStr && dateStr !== today) {
+      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}&start_date=${dateStr}&end_date=${dateStr}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.daily) {
+        const d = data.daily;
+        const parts = [];
+        if (d.temperature_2m_max?.[0] != null && d.temperature_2m_min?.[0] != null) {
+          parts.push(`${Math.round(d.temperature_2m_min[0])}–${Math.round(d.temperature_2m_max[0])}°C`);
+        }
+        if (d.weathercode?.[0] != null) {
+          const w = weatherCodeText(d.weathercode[0]);
+          if (w) parts.push(w);
+        }
+        if (d.precipitation_sum?.[0] != null && d.precipitation_sum[0] > 0) {
+          parts.push(`${d.precipitation_sum[0]} mm rain`);
+        }
+        return parts.join(', ');
+      }
+    } else {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weathercode,precipitation&timezone=auto`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.current) {
+        const c = data.current;
+        const parts = [];
+        if (c.temperature_2m != null) parts.push(`${Math.round(c.temperature_2m)}°C`);
+        if (c.weathercode != null) {
+          const w = weatherCodeText(c.weathercode);
+          if (w) parts.push(w);
+        }
+        if (c.precipitation != null && c.precipitation > 0) {
+          parts.push(`${c.precipitation} mm rain`);
+        }
+        return parts.join(', ');
+      }
+    }
+  } catch (e) {
+    console.error('Weather fetch error:', e);
+  }
+  return '';
+}
+
 const App = {
   currentUser: null,
   currentSession: null,
@@ -110,6 +173,9 @@ const App = {
         break;
       case 'log-entry':
         this.renderLogEntry(params || {});
+        break;
+      case 'log-detail':
+        this.renderLogDetail(params.id);
         break;
     }
   },
@@ -967,7 +1033,7 @@ const App = {
         const feelings = JSON.parse(e.handler_feelings || '[]');
         const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
         return `
-          <div class="card log-entry-card" data-id="${e.id}">
+          <div class="card log-entry-card" onclick="App.nav('log-detail', {id:'${e.id}'})" style="cursor:pointer">
             <div class="log-entry-header">
               <strong>${e.handler_name}</strong> &middot; ${e.dog_name}
               <span class="meta">${date}</span>
@@ -983,8 +1049,8 @@ const App = {
               ${feelings.length ? 'Feelings: ' + feelings.join(', ') : ''}
             </div>
             <div style="margin-top:8px">
-              <button class="btn btn-sm" onclick="App.editLogEntry('${e.id}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntry('${e.id}')">Delete</button>
+              <button class="btn btn-sm" onclick="event.stopPropagation();App.editLogEntry('${e.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteLogEntry('${e.id}')">Delete</button>
             </div>
           </div>
         `;
@@ -1011,6 +1077,99 @@ const App = {
     try {
       await API.deleteLogEntry(id);
       this.renderLog();
+    } catch (e) {
+      this.showSnackbar(e.message);
+    }
+  },
+
+  // ========== LOG DETAIL VIEW ==========
+  async renderLogDetail(id) {
+    const container = document.getElementById('log-detail-content');
+    container.innerHTML = '<div class="empty-state">Loading...</div>';
+
+    document.getElementById('back-from-detail-btn').onclick = () => this.nav('log');
+
+    try {
+      const res = await API.getLogEntry(id);
+      const e = res.entry;
+
+      const difficulties = JSON.parse(e.difficulties || '[]');
+      const feelings = JSON.parse(e.handler_feelings || '[]');
+      const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
+
+      let html = `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap">
+            <div>
+              <h3>${e.handler_name} &middot; ${e.dog_name}</h3>
+              <p style="font-size:13px;color:#888">${date}</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" onclick="App.editLogEntryFromDetail('${e.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntryFromDetail('${e.id}')">Delete</button>
+            </div>
+          </div>
+          <hr style="margin:12px 0" />
+          <table class="detail-table">
+      `;
+
+      const fields = [
+        ['Duration', e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' min ' + (e.search_duration_seconds % 60) + ' sec' : null],
+        ['Path Length', e.path_length_meters ? e.path_length_meters + ' m' : null],
+        ['Path Type', e.path_type ? e.path_type.replace(/_/g, ' ') : null],
+        ['Place', e.place_name || (e.place_lat != null && e.place_lng != null ? `${e.place_lat.toFixed(6)}, ${e.place_lng.toFixed(6)}` : null)],
+        ['Weather', e.weather_conditions || null],
+        ['Difficulties', difficulties.length ? difficulties.join(', ') : null],
+        ['Feelings', feelings.length ? feelings.join(', ') : null],
+        ['Notes', e.notes || null],
+      ];
+
+      fields.forEach(([label, val]) => {
+        if (val) {
+          html += `<tr><td class="dt-label">${label}</td><td class="dt-value">${val}</td></tr>`;
+        }
+      });
+
+      html += `</table></div>`;
+
+      const hasCoords = e.place_lat != null && e.place_lng != null;
+
+      if (hasCoords) {
+        html += `<div id="detail-map" style="height:300px;border-radius:12px;margin-bottom:16px"></div>`;
+      }
+
+      html += `<button class="btn btn-secondary" onclick="App.nav('log')">Back to Log</button>`;
+
+      container.innerHTML = html;
+
+      if (hasCoords) {
+        const detailMap = L.map('detail-map').setView([e.place_lat, e.place_lng], 14);
+        L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0', {
+          tileSize: 512, zoomOffset: -1, maxZoom: 22,
+          attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
+        }).addTo(detailMap);
+        L.marker([e.place_lat, e.place_lng]).addTo(detailMap);
+        setTimeout(() => detailMap.invalidateSize(), 300);
+      }
+    } catch (e) {
+      container.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+  },
+
+  async editLogEntryFromDetail(id) {
+    try {
+      const res = await API.getLogEntry(id);
+      this.nav('log-entry', { entryId: id, prefill: res.entry });
+    } catch (e) {
+      this.showSnackbar(e.message);
+    }
+  },
+
+  async deleteLogEntryFromDetail(id) {
+    if (!confirm('Delete this log entry?')) return;
+    try {
+      await API.deleteLogEntry(id);
+      this.nav('log');
     } catch (e) {
       this.showSnackbar(e.message);
     }
@@ -1098,6 +1257,14 @@ const App = {
 
     // Setup mini map
     this.setupLogEntryMap(prefill);
+
+    // Fetch weather from Open-Meteo if coordinates are set and weather is empty
+    const weatherInput = document.getElementById('le-weather');
+    if (!weatherInput.value && prefill.place_lat != null && prefill.place_lng != null) {
+      fetchWeather(prefill.place_lat, prefill.place_lng, prefill.search_date).then(w => {
+        if (w) weatherInput.value = w;
+      });
+    }
 
     // Store metadata for submit
     this.logEntryPrefill = prefill;

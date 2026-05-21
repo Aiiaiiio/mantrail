@@ -137,6 +137,13 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 
 #le-map-section { margin-top: 8px; }
 
+.detail-table { width: 100%; border-collapse: collapse; }
+.detail-table tr { border-bottom: 1px solid #f0f0f0; }
+.detail-table tr:last-child { border-bottom: none; }
+.detail-table td { padding: 8px 4px; vertical-align: top; font-size: 14px; }
+.dt-label { color: #888; width: 120px; font-weight: 500; }
+.dt-value { color: #222; }
+
 @media (max-width: 600px) {
   .page { padding: 12px; }
   #login-page { padding-top: 80px; }

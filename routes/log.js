@@ -42,6 +42,13 @@ router.post('/', (req, res) => {
   res.status(201).json({ entry });
 });
 
+router.get('/:id', (req, res) => {
+  const entry = q.findLogEntryById.get(req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Log entry not found' });
+  if (entry.user_id !== req.user.userId) return res.status(403).json({ error: 'Not your entry' });
+  res.json({ entry });
+});
+
 router.put('/:id', (req, res) => {
   const existing = q.findLogEntryById.get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Log entry not found' });
