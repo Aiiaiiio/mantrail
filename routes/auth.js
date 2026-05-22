@@ -119,7 +119,10 @@ router.post('/google', async (req, res) => {
     }
 
     let avatarUrl = user.avatar_url || '';
-    if (googlePicture && !user.avatar_url) {
+    const avatarOnDisk = user.avatar_url
+      ? fs.existsSync(path.join(AVATAR_DIR, path.basename(user.avatar_url)))
+      : false;
+    if (googlePicture && (!user.avatar_url || !avatarOnDisk)) {
       const ext = googlePicture.includes('.png') ? '.png' : '.jpg';
       const localPath = path.join(AVATAR_DIR, `${user.id}${ext}`);
       const ok = await downloadAvatar(googlePicture, localPath);

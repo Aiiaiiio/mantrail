@@ -816,9 +816,12 @@ const App = {
     } else {
       let icon;
       if (avatarUrl) {
+        const initial = (name || '?')[0].toUpperCase();
+        const color = this.getColorForUser(userId);
         icon = L.divIcon({
           className: 'user-marker',
-          html: `<img src="${avatarUrl}" alt="" />`,
+          html: `<img src="${avatarUrl}" alt=""
+            onerror="this.parentElement.innerHTML='<span style=\\'background:${color}\\'>${initial}</span>'" />`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         });
