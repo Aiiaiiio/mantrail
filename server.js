@@ -23,6 +23,7 @@ app.use('/api/sessions', require('./routes/summary'));
 app.use('/api/dogs', require('./routes/dogs'));
 app.use('/api/log', require('./routes/log'));
 
+app.use('/static/avatars', express.static(path.resolve(__dirname, 'data', 'avatars')));
 app.use('/static', express.static(path.resolve(__dirname, 'static')));
 
 const staticHandler = serveStatic(path.resolve(__dirname, 'document_root'));

@@ -12,7 +12,7 @@ COPY ws/ ./ws/
 COPY document_root/ ./document_root/
 COPY certs/ ./certs/
 
-RUN mkdir -p static/avatars
+RUN mkdir -p data/avatars
 
 EXPOSE 22334
 

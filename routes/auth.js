@@ -8,7 +8,8 @@ const { q, uuid } = require('../db/queries');
 const { signToken, authenticateToken } = require('../middleware/auth');
 
 const router = Router();
-const AVATAR_DIR = path.resolve(__dirname, '..', 'static', 'avatars');
+const AVATAR_DIR = path.resolve(__dirname, '..', 'data', 'avatars');
+if (!fs.existsSync(AVATAR_DIR)) fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
 function fetchGoogleUserInfo(accessToken) {
   return new Promise((resolve, reject) => {

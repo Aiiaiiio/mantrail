@@ -43,7 +43,7 @@ docker run -d \
   --restart unless-stopped \
   --env-file .env \
   -p 22334:22334 \
-  -v mantrail-data:/app \
+  -v mantrail-data:/app/data \
   mantrail-app
 ```
 
@@ -53,7 +53,7 @@ docker run -d \
 | `--restart unless-stopped` | Auto-start on boot; don't restart after manual stop |
 | `--env-file .env` | Inject secrets at runtime |
 | `-p 22334:22334` | Map host port 22334 to container |
-| `-v mantrail-data:/app` | Persist SQLite database + downloaded avatars |
+| `-v mantrail-data:/app/data` | Persist SQLite database + downloaded avatars |
 
 ### 4. Open the app
 

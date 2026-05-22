@@ -2,7 +2,10 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.resolve(__dirname, '..', 'mantrail.db');
+const dataDir = path.resolve(__dirname, '..', 'data');
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+const DB_PATH = path.join(dataDir, 'mantrail.db');
 const db = new Database(DB_PATH);
 
 db.pragma('journal_mode = WAL');
