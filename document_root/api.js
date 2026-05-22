@@ -61,6 +61,7 @@ const API = {
   // Invite tokens
   getInviteTokens() { return this.get('/api/auth/invite/tokens'); },
   generateInvite(canInvite) { return this.post('/api/auth/invite/generate', { can_invite: canInvite ? 1 : 0 }); },
+  deleteInviteToken(id) { return this.del(`/api/auth/invite/tokens/${id}`); },
 
   // Sessions
   getSessions() { return this.get('/api/sessions'); },

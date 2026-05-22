@@ -213,6 +213,7 @@
   },
   "access": {
     "title": "Access Management",
+    "back": "Back to Dashboard",
     "allowedEmails": "Allowed Emails",
     "addEmail": "Add Email",
     "canInviteLabel": "Can invite others",
@@ -222,6 +223,8 @@
     "restricted": "No invite rights",
     "inviteLinks": "Invite Links",
     "generateLink": "Generate Invite Link",
+    "manageAccess": "Manage Access",
+    "deleteToken": "Delete",
     "deniedTitle": "Access Restricted",
     "deniedMessage": "You need an invite to use this app. Ask a friend who already has access to generate an invite link for you.",
     "tryAgain": "Try Again",

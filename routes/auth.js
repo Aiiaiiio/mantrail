@@ -53,12 +53,21 @@ function downloadAvatar(url, filePath) {
 }
 
 function userToJSON(user) {
+  const count = q.countAllowedEmails.get().count;
+  let canInviteVal = 0;
+  if (count === 0) {
+    canInviteVal = 1; // bootstrap: allowlist empty, first user can manage
+  } else if (user.email) {
+    const entry = q.findAllowedEmail.get(user.email);
+    if (entry) canInviteVal = entry.can_invite;
+  }
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     avatar_url: user.avatar_url,
     display_name: user.display_name || user.name,
+    can_invite: canInviteVal,
   };
 }
 
@@ -131,11 +140,11 @@ router.post('/google', async (req, res) => {
       // First user gets invite rights; invited users get the token's setting
       const inviteCanInvite = isFirst ? 1 : (inviteToken ? (q.findInviteByToken.get(inviteToken)?.can_invite || 0) : 0);
       q.insertAllowedEmail.run(uuid(), email, user.id, inviteCanInvite);
-      // Mark invite token used
+      // Delete invite token after use
       if (inviteToken) {
         const tokenRec = q.findInviteByToken.get(inviteToken);
         if (tokenRec && !tokenRec.used_by) {
-          q.useInviteToken.run(user.id, tokenRec.id);
+          q.deleteInviteToken.run(tokenRec.id);
         }
       }
     }
@@ -227,6 +236,12 @@ router.post('/invite/generate', (req, res) => {
   q.insertInviteToken.run(id, token, req.user.userId, can_invite ? 1 : 0);
   const record = db.prepare('SELECT * FROM invite_tokens WHERE id = ?').get(id);
   res.json({ token: record });
+});
+
+router.delete('/invite/tokens/:id', (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  q.deleteInviteTokenById.run(req.params.id);
+  res.json({ success: true });
 });
 
 module.exports = router;

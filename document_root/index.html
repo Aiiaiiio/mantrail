@@ -39,6 +39,7 @@
         <button class="btn" id="create-session-btn" data-i18n="dashboard.newSession">+ New Session</button>
         <button class="btn btn-secondary" id="join-session-btn" data-i18n="dashboard.joinWithCode">Join with Code</button>
         <button class="btn btn-secondary" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
+        <button class="btn btn-secondary" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
       </div>
 
       <div id="session-list"></div>
@@ -69,29 +70,33 @@
           <div id="dogs-list"></div>
         </div>
       </div>
+    </div>
 
-      <hr style="margin:20px 0" />
+    <!-- ACCESS MANAGEMENT -->
+    <div id="access-management-page" class="page">
+      <div class="top-bar">
+        <h1 data-i18n="access.title">Access Management</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-access-btn" data-i18n="access.back">Back to Dashboard</button>
+      </div>
 
-      <div class="card" id="access-management-card" style="margin-bottom:16px;display:none">
-        <h2 data-i18n="access.title">Access Management</h2>
-        <div class="form-group">
-          <label data-i18n="access.allowedEmails">Allowed Emails</label>
-          <div id="allowlist-entries"></div>
-          <div class="row" style="margin-top:8px;align-items:center">
-            <input type="email" id="new-allowed-email" placeholder="friend@example.com" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
-            <button class="btn btn-sm" id="add-allowed-btn" data-i18n="access.addEmail">Add Email</button>
-          </div>
-          <div style="margin-top:8px">
-            <label><input type="checkbox" id="add-can-invite" /> <span data-i18n="access.canInviteLabel">Can invite others</span></label>
-          </div>
+      <div class="card" style="margin-bottom:16px">
+        <h2 data-i18n="access.allowedEmails">Allowed Emails</h2>
+        <div id="allowlist-entries"></div>
+        <div class="row" style="margin-top:8px;align-items:center">
+          <input type="email" id="new-allowed-email" placeholder="friend@example.com" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px" />
+          <button class="btn btn-sm" id="add-allowed-btn" data-i18n="access.addEmail">Add Email</button>
         </div>
-        <div class="form-group">
-          <label data-i18n="access.inviteLinks">Invite Links</label>
-          <div id="invite-tokens-list"></div>
-          <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
-            <button class="btn btn-sm" id="generate-invite-btn" data-i18n="access.generateLink">Generate Invite Link</button>
-            <label style="font-size:13px"><input type="checkbox" id="invite-can-invite" /> <span data-i18n="access.canInviteLabel">Can invite others</span></label>
-          </div>
+        <div style="margin-top:8px">
+          <label><input type="checkbox" id="add-can-invite" /> <span data-i18n="access.canInviteLabel">Can invite others</span></label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h2 data-i18n="access.inviteLinks">Invite Links</h2>
+        <div id="invite-tokens-list"></div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+          <button class="btn btn-sm" id="generate-invite-btn" data-i18n="access.generateLink">Generate Invite Link</button>
+          <label style="font-size:13px"><input type="checkbox" id="invite-can-invite" /> <span data-i18n="access.canInviteLabel">Can invite others</span></label>
         </div>
       </div>
     </div>

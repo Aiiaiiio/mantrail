@@ -93,7 +93,8 @@ const q = {
     FROM invite_tokens it LEFT JOIN users u ON u.id = it.created_by LEFT JOIN users u2 ON u2.id = it.used_by
     ORDER BY it.created_at DESC`),
   insertInviteToken: db.prepare('INSERT INTO invite_tokens (id, token, created_by, can_invite) VALUES (?, ?, ?, ?)'),
-  useInviteToken: db.prepare("UPDATE invite_tokens SET used_by = ?, used_at = datetime('now') WHERE id = ? AND used_by IS NULL"),
+  deleteInviteToken: db.prepare("DELETE FROM invite_tokens WHERE id = ?"),
+  deleteInviteTokenById: db.prepare("DELETE FROM invite_tokens WHERE id = ? AND used_by IS NULL"),
 
   findOldSessions: db.prepare("SELECT id FROM sessions WHERE created_at < datetime('now', '-30 days')"),
   deleteSessionMembers: db.prepare('DELETE FROM session_members WHERE session_id = ?'),

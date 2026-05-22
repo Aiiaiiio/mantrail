@@ -213,6 +213,7 @@
   },
   "access": {
     "title": "Hozzáférés kezelése",
+    "back": "Vissza a főoldalra",
     "allowedEmails": "Engedélyezett email címek",
     "addEmail": "Email hozzáadása",
     "canInviteLabel": "Meghívhat másokat",
@@ -222,6 +223,8 @@
     "restricted": "Nincs joga meghívni",
     "inviteLinks": "Meghívó linkek",
     "generateLink": "Meghívó link létrehozása",
+    "manageAccess": "Hozzáférés kezelése",
+    "deleteToken": "Törlés",
     "deniedTitle": "Hozzáférés korlátozva",
     "deniedMessage": "Meghívó szükséges az alkalmazás használatához. Kérj meg egy barátot, aki már hozzáfér, hogy generáljon egy meghívó linket.",
     "tryAgain": "Újrapróbálkozás",

@@ -176,6 +176,9 @@ const App = {
       this.renderSessionList();
     } else if (page === 'session' && this.currentSession) {
       this.updateSessionUI();
+    } else if (page === 'access-management') {
+      API.getAllowlist().then(r => this.renderAllowlist(r.entries)).catch(() => {});
+      this.renderInviteTokens();
     }
   },
 
@@ -210,6 +213,9 @@ const App = {
         this.renderLogDetail(params.id);
         break;
       case 'access-denied':
+        break;
+      case 'access-management':
+        this.renderAccessManagementPage();
         break;
     }
   },
@@ -345,6 +351,14 @@ const App = {
       this.nav('log');
     };
 
+    const manageBtn = document.getElementById('manage-access-btn');
+    if (this.currentUser?.can_invite) {
+      manageBtn.style.display = '';
+      manageBtn.onclick = () => this.nav('access-management');
+    } else {
+      manageBtn.style.display = 'none';
+    }
+
     document.getElementById('logout-btn').onclick = () => this.logout();
 
     const dnInput = document.getElementById('display-name-input');
@@ -371,7 +385,6 @@ const App = {
       try {
         await API.addDog(name);
         input.value = '';
-    this.renderAccessManagement();
     this.renderDogs();
       } catch (e) {
         this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
@@ -379,7 +392,6 @@ const App = {
     };
 
     this.renderDogs();
-    this.renderAccessManagement();
 
     try {
       const res = await API.getSessions();
@@ -410,19 +422,18 @@ const App = {
   },
 
   // ========== ACCESS MANAGEMENT ==========
-  async renderAccessManagement() {
-    const card = document.getElementById('access-management-card');
+  async renderAccessManagementPage() {
+    document.getElementById('back-from-access-btn').onclick = () => this.nav('dashboard');
+
     try {
       const res = await API.getAllowlist();
-      const entries = res.entries;
-      card.style.display = 'block';
-
-      this.renderAllowlist(entries);
-      this.renderInviteTokens();
+      this.renderAllowlist(res.entries);
     } catch (e) {
-      card.style.display = 'none';
+      this.nav('dashboard');
       return;
     }
+
+    this.renderInviteTokens();
 
     document.getElementById('add-allowed-btn').onclick = async () => {
       const input = document.getElementById('new-allowed-email');
@@ -497,13 +508,12 @@ const App = {
       const res = await API.getInviteTokens();
       const tokens = res.tokens;
       container.innerHTML = tokens.map(t => {
-        const used = t.used_by ? `<span style="color:#43a047">${I18n.t('access.usedBy')} ${t.used_by_name || 'someone'}</span>` : `<span style="color:#888">${I18n.t('access.unused')}</span>`;
         const url = `${window.location.origin}${window.location.pathname}?token=${t.token}`;
         return `
           <div class="dog-item">
             <span style="font-size:12px;font-family:monospace;word-break:break-all">${t.token}</span>
-            ${used}
             <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText('${url}')">${I18n.t('session.copy')}</button>
+            <button class="btn btn-sm btn-danger" onclick="App.deleteInviteToken('${t.id}')">${I18n.t('access.deleteToken')}</button>
           </div>
         `;
       }).join('');
@@ -512,6 +522,15 @@ const App = {
       }
     } catch (e) {
       container.innerHTML = '';
+    }
+  },
+
+  async deleteInviteToken(id) {
+    try {
+      await API.deleteInviteToken(id);
+      this.renderInviteTokens();
+    } catch (e) {
+      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
   },
 
