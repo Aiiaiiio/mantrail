@@ -136,6 +136,7 @@ const App = {
       if (config.googleClientId) {
         document.getElementById('login-page').dataset.clientId = config.googleClientId;
       }
+      this.appVersion = config.version || '';
     } catch (e) {
       console.error('Failed to load config:', e);
     }
@@ -328,6 +329,7 @@ const App = {
     list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
     document.getElementById('user-name').textContent = this.currentUser?.name || '';
+    document.getElementById('version-tag').textContent = this.appVersion ? `v${this.appVersion}` : '';
 
     document.getElementById('create-session-btn').onclick = () => {
       const name = prompt(I18n.t('dashboard.sessionName'));
