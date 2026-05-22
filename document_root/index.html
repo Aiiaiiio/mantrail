@@ -24,11 +24,7 @@
     <!-- DASHBOARD -->
     <div id="dashboard-page" class="page">
       <div class="top-bar">
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
-          <button class="btn btn-secondary btn-sm" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
-        </div>
-        <div class="user-info">
+        <div class="top-bar-right">
           <span id="user-name"></span>
           <span id="version-tag" style="font-size:11px;color:#999;margin:0 8px"></span>
           <select id="language-select" class="lang-select" title="Language">
@@ -36,6 +32,10 @@
             <option value="en">&#127468;&#127463;</option>
           </select>
           <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
+        </div>
+        <div class="top-bar-left">
+          <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
+          <button class="btn btn-secondary btn-sm" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
         </div>
       </div>
 
