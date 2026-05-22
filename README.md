@@ -39,6 +39,7 @@ docker build -t mantrail-app .
 
 ```bash
 docker run -d \
+  --name mantrail-app \
   --restart unless-stopped \
   --env-file .env \
   -p 22334:22334 \
