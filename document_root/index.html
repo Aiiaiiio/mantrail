@@ -24,7 +24,10 @@
     <!-- DASHBOARD -->
     <div id="dashboard-page" class="page">
       <div class="top-bar">
-        <h1 data-i18n="dashboard.sessions">Sessions</h1>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
+          <button class="btn btn-secondary btn-sm" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
+        </div>
         <div class="user-info">
           <span id="user-name"></span>
           <span id="version-tag" style="font-size:11px;color:#999;margin:0 8px"></span>
@@ -36,14 +39,14 @@
         </div>
       </div>
 
-      <div class="row" style="margin-bottom:16px">
-        <button class="btn" id="create-session-btn" data-i18n="dashboard.newSession">+ New Session</button>
-        <button class="btn btn-secondary" id="join-session-btn" data-i18n="dashboard.joinWithCode">Join with Code</button>
-        <button class="btn btn-secondary" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
-        <button class="btn btn-secondary" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
+      <div class="card" style="margin-bottom:16px">
+        <h2 data-i18n="dashboard.sessions">Sessions</h2>
+        <div class="row" style="margin-bottom:12px">
+          <button class="btn" id="create-session-btn" data-i18n="dashboard.newSession">+ New Session</button>
+          <button class="btn btn-secondary" id="join-session-btn" data-i18n="dashboard.joinWithCode">Join with Code</button>
+        </div>
+        <div id="session-list"></div>
       </div>
-
-      <div id="session-list"></div>
 
       <hr style="margin:20px 0" />
 
