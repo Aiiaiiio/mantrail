@@ -27,6 +27,14 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function medianPosition(positions) {
+  if (!positions || positions.length === 0) return null;
+  const lats = positions.map(p => p.lat).sort((a, b) => a - b);
+  const lngs = positions.map(p => p.lng).sort((a, b) => a - b);
+  const mid = Math.floor(positions.length / 2);
+  return { lat: lats[mid], lng: lngs[mid] };
+}
+
 function toLocalDateInput(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -989,25 +997,59 @@ const App = {
 
   // ========== LOCATION TRACKING ==========
   startLocationUpdates() {
-    if (this.locationUpdateInterval) return;
+    if (this.locationWatchId != null) return;
     if (!navigator.geolocation) return;
 
-    this.locationUpdateInterval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          WS.send({
-            type: 'location_update',
-            lat: lat.toString(),
-            lng: lng.toString(),
-            name: this.currentUser.name,
-            avatar_url: this.currentUser.avatar_url || '',
-          });
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 },
-      );
-    }, 2000);
+    this.posBuffer = [];
+    this.lastSentPos = null;
+    this.lastSentTime = 0;
+
+    this.locationWatchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        if (accuracy > 30) return;
+
+        this.posBuffer.push({ lat, lng });
+        if (this.posBuffer.length > 7) this.posBuffer.shift();
+
+        const median = medianPosition(this.posBuffer);
+        if (!median) return;
+
+        this.updateMemberMarker(this.currentUser.id, median.lat, median.lng, this.currentUser.name, this.currentUser.avatar_url || '');
+
+        const now = Date.now();
+        if (now - this.lastSentTime < 1000) return;
+
+        if (this.lastSentPos) {
+          const dist = haversine(this.lastSentPos.lat, this.lastSentPos.lng, median.lat, median.lng);
+          if (dist > 20) {
+            this.lastSentPos = { lat, lng };
+            this.lastSentTime = now;
+            WS.send({
+              type: 'location_update',
+              lat: lat.toString(),
+              lng: lng.toString(),
+              name: this.currentUser.name,
+              avatar_url: this.currentUser.avatar_url || '',
+            });
+            return;
+          }
+          if (dist < 2 && now - this.lastSentTime < 10000) return;
+        }
+
+        this.lastSentPos = { lat: median.lat, lng: median.lng };
+        this.lastSentTime = now;
+        WS.send({
+          type: 'location_update',
+          lat: median.lat.toString(),
+          lng: median.lng.toString(),
+          name: this.currentUser.name,
+          avatar_url: this.currentUser.avatar_url || '',
+        });
+      },
+      (err) => { console.error('Location watch error:', err.message); },
+      { enableHighAccuracy: true, maximumAge: 0 },
+    );
   },
 
   startPathTracking(pathType) {
@@ -1019,40 +1061,70 @@ const App = {
       return;
     }
 
-    const sendPosition = () => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          const ts = Date.now();
-          this.trackedWaypoints.push({ lat, lng, t: ts });
-          WS.send({
-            type: 'path_waypoint',
-            pathType,
-            lat: lat.toString(),
-            lng: lng.toString(),
-            timestamp: ts,
-          });
-        },
-        (err) => {
-          console.error('Geo error:', err.message);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 },
-      );
-    };
+    this.pathPosBuffer = [];
+    this.pathLastSentPos = null;
+    this.pathLastSentTime = 0;
 
-    sendPosition();
-    this.pathTrackingInterval = setInterval(sendPosition, 2000);
+    this.pathWatchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        if (accuracy > 30) return;
+
+        const ts = Date.now();
+        this.trackedWaypoints.push({ lat, lng, t: ts });
+
+        this.pathPosBuffer.push({ lat, lng });
+        if (this.pathPosBuffer.length > 7) this.pathPosBuffer.shift();
+
+        const median = medianPosition(this.pathPosBuffer);
+        if (!median) return;
+
+        if (ts - this.pathLastSentTime < 1000) return;
+
+        if (this.pathLastSentPos) {
+          const dist = haversine(this.pathLastSentPos.lat, this.pathLastSentPos.lng, median.lat, median.lng);
+          if (dist > 20) {
+            this.pathLastSentPos = { lat, lng };
+            this.pathLastSentTime = ts;
+            WS.send({
+              type: 'path_waypoint',
+              pathType,
+              lat: lat.toString(),
+              lng: lng.toString(),
+              timestamp: ts,
+            });
+            return;
+          }
+          if (dist < 2 && ts - this.pathLastSentTime < 10000) return;
+        }
+
+        this.pathLastSentPos = { lat: median.lat, lng: median.lng };
+        this.pathLastSentTime = ts;
+        WS.send({
+          type: 'path_waypoint',
+          pathType,
+          lat: median.lat.toString(),
+          lng: median.lng.toString(),
+          timestamp: ts,
+        });
+      },
+      (err) => { console.error('Path watch error:', err.message); },
+      { enableHighAccuracy: true, maximumAge: 0 },
+    );
   },
 
   stopAllTracking() {
-    if (this.locationUpdateInterval) {
-      clearInterval(this.locationUpdateInterval);
-      this.locationUpdateInterval = null;
+    if (this.locationWatchId != null) {
+      navigator.geolocation.clearWatch(this.locationWatchId);
+      this.locationWatchId = null;
     }
-    if (this.pathTrackingInterval) {
-      clearInterval(this.pathTrackingInterval);
-      this.pathTrackingInterval = null;
+    if (this.pathWatchId != null) {
+      navigator.geolocation.clearWatch(this.pathWatchId);
+      this.pathWatchId = null;
     }
+    this.posBuffer = [];
+    this.pathPosBuffer = [];
+    this.lastSentPos = null;
     this.trackedPathType = null;
   },
 

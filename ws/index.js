@@ -106,11 +106,8 @@ function setupWebSocket(server) {
             if (ws.role === 'lost_person') {
               broadcastToSessionExceptRole(ws.sessionId, locMsg, ws.userId, 'dog_handler');
             } else {
-              broadcastToSession(ws.sessionId, locMsg);
+              broadcastToSession(ws.sessionId, locMsg, ws.userId);
             }
-
-            ws.send(JSON.stringify(locMsg));
-            ws.send(JSON.stringify({ type: 'location_ack', userId: ws.userId }));
             break;
           }
 
