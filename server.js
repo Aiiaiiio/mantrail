@@ -36,8 +36,8 @@ app.use((req, res, next) => {
 });
 
 const options = {
-  key: fs.readFileSync(path.resolve(__dirname, 'certs/key2.pem')),
-  cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert2.pem')),
+  key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),
+  cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')),
 };
 
 const server = https.createServer(options, app);
