@@ -93,7 +93,7 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 
 /* ===== SESSION PAGE — full-viewport layout ===== */
 #session-page {
-  display: flex; flex-direction: column;
+  flex-direction: column;
   height: 100dvh; max-width: none; padding: 0;
 }
 #session-page.active { display: flex; }
