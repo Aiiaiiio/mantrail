@@ -237,5 +237,16 @@
     "hu": "Magyar",
     "en": "English",
     "label": "Language"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "Back",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "accessManagement": "Access Management",
+    "accessDescription": "Manage who can access the app and generate invite links.",
+    "themeChanged": "Theme changed to {theme}"
   }
 }

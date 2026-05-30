@@ -237,5 +237,15 @@
     "hu": "Magyar",
     "en": "English",
     "label": "Nyelv"
+  },
+  "settings": {
+    "title": "Beállítások",
+    "back": "Vissza",
+    "language": "Nyelv",
+    "theme": "Téma",
+    "light": "Világos",
+    "dark": "Sötét",
+    "accessManagement": "Hozzáférés kezelése",
+    "accessDescription": "Az alkalmazáshoz való hozzáférés és meghívó linkek kezelése."
   }
 }

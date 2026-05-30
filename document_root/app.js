@@ -170,11 +170,13 @@ const App = {
 
     await I18n.init();
 
-    const sel = document.getElementById('language-select');
-    if (sel) sel.value = I18n.locale;
+    this.setTheme(localStorage.getItem('theme') || 'light');
+
     document.addEventListener('change', (e) => {
-      if (e.target.id === 'language-select') {
+      if (e.target.id === 'settings-language-select') {
         I18n.setLocale(e.target.value);
+      } else if (e.target.id === 'settings-theme-select') {
+        this.setTheme(e.target.value);
       }
     });
   },
@@ -188,6 +190,13 @@ const App = {
     } else if (page === 'access-management') {
       API.getAllowlist().then(r => this.renderAllowlist(r.entries)).catch(() => {});
       this.renderInviteTokens();
+    } else if (page === 'settings') {
+      const sel = document.getElementById('settings-language-select');
+      if (sel) sel.value = I18n.locale;
+      const themeSel = document.getElementById('settings-theme-select');
+      if (themeSel) themeSel.value = this.theme;
+      const card = document.getElementById('settings-access-card');
+      if (card) card.style.display = this.currentUser?.can_invite ? '' : 'none';
     }
   },
 
@@ -225,6 +234,9 @@ const App = {
         break;
       case 'access-management':
         this.renderAccessManagementPage();
+        break;
+      case 'settings':
+        this.renderSettingsPage();
         break;
     }
   },
@@ -369,6 +381,7 @@ const App = {
       manageBtn.style.display = 'none';
     }
 
+    document.getElementById('settings-btn').onclick = () => this.nav('settings');
     document.getElementById('logout-btn').onclick = () => this.logout();
 
     const dnInput = document.getElementById('display-name-input');
@@ -429,6 +442,28 @@ const App = {
         <button class="btn btn-sm" onclick="App.nav('session', {id:'${s.id}'})">${I18n.t('dashboard.open')}</button>
       </div>
     `).join('');
+  },
+
+  // ========== SETTINGS ==========
+  setTheme(theme) {
+    this.theme = theme;
+    localStorage.setItem('theme', theme);
+    document.documentElement.dataset.theme = theme;
+  },
+
+  renderSettingsPage() {
+    document.getElementById('settings-language-select').value = I18n.locale;
+    document.getElementById('settings-theme-select').value = this.theme || 'light';
+
+    const card = document.getElementById('settings-access-card');
+    if (this.currentUser?.can_invite) {
+      card.style.display = '';
+      document.getElementById('settings-access-btn').onclick = () => this.nav('access-management');
+    } else {
+      card.style.display = 'none';
+    }
+
+    document.getElementById('back-from-settings-btn').onclick = () => this.nav('dashboard');
   },
 
   // ========== ACCESS MANAGEMENT ==========
