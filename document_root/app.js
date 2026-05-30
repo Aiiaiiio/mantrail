@@ -1055,6 +1055,9 @@ const App = {
     this.locationWatchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+        this.updateMemberMarker(this.currentUser.id, lat, lng, this.currentUser.name, this.currentUser.avatar_url || '');
+
         if (accuracy > 30) return;
 
         this.posBuffer.push({ lat, lng });
@@ -1116,16 +1119,21 @@ const App = {
     this.pathWatchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        if (accuracy > 30) return;
 
         const ts = Date.now();
         this.trackedWaypoints.push({ lat, lng, t: ts });
+
+        this.updateMemberMarker(this.currentUser.id, lat, lng, this.currentUser.name, this.currentUser.avatar_url || '');
+
+        if (accuracy > 30) return;
 
         this.pathPosBuffer.push({ lat, lng });
         if (this.pathPosBuffer.length > 7) this.pathPosBuffer.shift();
 
         const median = medianPosition(this.pathPosBuffer);
         if (!median) return;
+
+        this.updateMemberMarker(this.currentUser.id, median.lat, median.lng, this.currentUser.name, this.currentUser.avatar_url || '');
 
         if (ts - this.pathLastSentTime < 1000) return;
 
