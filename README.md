@@ -76,5 +76,9 @@ docker stop mantrail-app
 docker rm mantrail-app
 
 # Delete all data (database, avatars)
+# (only if using the named volume as shown above)
 docker volume rm mantrail-data
+
+# If you use a host bind mount instead (e.g. -v /path/on/host:/app/data),
+# just remove that directory directly.
 ```

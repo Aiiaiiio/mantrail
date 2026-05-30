@@ -59,7 +59,7 @@ function cleanupOldSessions() {
 setInterval(cleanupOldSessions, 60 * 60 * 1000);
 cleanupOldSessions();
 
-const PORT = process.env.PORT || 23456;
+const PORT = process.env.PORT || 22334;
 server.listen(PORT, () => {
   console.log(`Server running on https://0.0.0.0:${PORT}`);
 });
