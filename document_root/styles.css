@@ -91,17 +91,74 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 
 #map { height: 60vh; border-radius: 12px; margin-bottom: 12px; }
 
-#session-toolbar {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
-  align-items: center;
+/* ===== SESSION PAGE — full-viewport layout ===== */
+#session-page {
+  display: flex; flex-direction: column;
+  height: 100dvh; max-width: none; padding: 0;
+}
+#session-page.active { display: flex; }
+
+.session-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
 }
 
-#session-toolbar .badge {
-  background: var(--primary); color: #fff; padding: 4px 10px; border-radius: 20px;
-  font-size: 12px; font-weight: 500;
+.session-title { font-size: 1.2rem; margin-bottom: 0; }
+
+.session-code-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px;
+}
+.session-code-row span { display: flex; align-items: center; gap: 6px; }
+
+.session-user-row {
+  display: flex; align-items: center; gap: 8px; font-size: 14px;
+  flex-wrap: wrap;
+}
+.session-user-row select { flex: 1; min-width: 140px; padding: 4px 8px; font-size: 13px; }
+
+.session-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
 }
 
-#member-list { margin-bottom: 12px; }
+#session-map { flex: 1; min-height: 0; border: none; }
+
+/* ===== DETAILS / SUMMARY (collapsible route drawer) ===== */
+#route-draw-section { margin-top: 4px; }
+#route-draw-section summary {
+  cursor: pointer; font-size: 14px; padding: 4px 0; user-select: none;
+}
+#route-draw-section summary::marker { color: var(--text-secondary); }
+
+#route-draw-panel {
+  background: var(--card-bg); border-radius: 12px; padding: 12px;
+  box-shadow: 0 2px 8px var(--shadow-strong); margin-top: 8px;
+}
+#route-draw-panel select, #route-draw-panel button { margin-top: 8px; }
+
+/* ===== MEMBERS MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-content {
+  background: var(--card-bg); border-radius: 16px; padding: 20px;
+  width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 8px 32px var(--shadow-strong);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-header h3 { margin: 0; }
+
+#member-list { margin-bottom: 0; }
 .member-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 0; border-bottom: 1px solid var(--member-border); font-size: 14px;
@@ -119,12 +176,6 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
   width: 18px; height: 18px; border-radius: 50%;
   background: var(--primary); color: #fff; font-size: 11px; font-weight: bold;
 }
-
-#route-draw-panel {
-  background: var(--card-bg); border-radius: 12px; padding: 12px;
-  box-shadow: 0 2px 8px var(--shadow-strong); margin-bottom: 12px;
-}
-#route-draw-panel select, #route-draw-panel button { margin-top: 8px; }
 
 #snackbar {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -223,4 +274,8 @@ select {
   .page { padding: 12px; }
   #login-page { padding-top: 80px; }
   #map { height: 50vh; }
+  #session-page { padding: 0; }
+  .session-header { padding: 10px 12px; }
+  .session-title { font-size: 1.1rem; }
+  .session-code-row { font-size: 12px; }
 }

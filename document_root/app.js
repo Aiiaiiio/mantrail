@@ -648,23 +648,27 @@ const App = {
       });
     };
 
-    document.getElementById('role-passive-btn').onclick = () => API.changeRole(session.id, 'passive_member').then(r => {
-      this.currentSessionData = r;
-      this.updateSessionUI();
-      WS.send({ type: 'role_changed', role: 'passive_member' });
-    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
+    document.getElementById('role-select').onchange = () => {
+      const newRole = document.getElementById('role-select').value;
+      if (!newRole) return;
+      API.changeRole(session.id, newRole).then(r => {
+        this.currentSessionData = r;
+        this.updateSessionUI();
+        WS.send({ type: 'role_changed', role: newRole });
+      }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
+    };
 
-    document.getElementById('role-lost-btn').onclick = () => API.changeRole(session.id, 'lost_person').then(r => {
-      this.currentSessionData = r;
-      this.updateSessionUI();
-      WS.send({ type: 'role_changed', role: 'lost_person' });
-    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
-
-    document.getElementById('role-handler-btn').onclick = () => API.changeRole(session.id, 'dog_handler').then(r => {
-      this.currentSessionData = r;
-      this.updateSessionUI();
-      WS.send({ type: 'role_changed', role: 'dog_handler' });
-    }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
+    document.getElementById('members-btn').onclick = () => {
+      document.getElementById('members-modal').style.display = 'flex';
+    };
+    document.getElementById('members-modal-close').onclick = () => {
+      document.getElementById('members-modal').style.display = 'none';
+    };
+    document.getElementById('members-modal').onclick = (e) => {
+      if (e.target === e.currentTarget) {
+        document.getElementById('members-modal').style.display = 'none';
+      }
+    };
 
     document.getElementById('start-hiding-btn').onclick = () => API.startHiding(session.id).then(() => {
       this.showSnackbar(I18n.t('session.hidingStarted'));
@@ -775,15 +779,26 @@ const App = {
     const hasLostPerson = members.some(m => m.role === 'lost_person');
     const hasHandler = members.some(m => m.role === 'dog_handler');
 
-    document.getElementById('role-passive-btn').style.display = me?.role !== 'passive_member' ? '' : 'none';
-    document.getElementById('role-lost-btn').style.display = !isLost && !hasLostPerson ? '' : 'none';
-    document.getElementById('role-handler-btn').style.display = !isHandler && !hasHandler ? '' : 'none';
-    document.getElementById('show-summary-btn').style.display = '';
+    const select = document.getElementById('role-select');
+    const currentRole = me?.role || 'passive_member';
+    const roles = ['passive_member', 'lost_person', 'dog_handler'];
+    select.innerHTML = roles.map(r => {
+      const taken = (r === 'lost_person' && hasLostPerson && r !== currentRole) ||
+                    (r === 'dog_handler' && hasHandler && r !== currentRole);
+      const label = I18n.t('roles.' + r);
+      return `<option value="${r}" ${r === currentRole ? 'selected' : ''} ${taken ? 'disabled' : ''}>${label}${taken ? ' (' + I18n.t('session.taken') + ')' : ''}</option>`;
+    }).join('');
+
+    document.getElementById('session-user-label').textContent = this.currentUser.name;
 
     document.getElementById('hiding-controls').style.display = isLost ? 'flex' : 'none';
     document.getElementById('search-controls').style.display = isHandler ? 'flex' : 'none';
 
-    document.getElementById('your-role').textContent = I18n.t('session.yourRole', { role: I18n.t('roles.' + (me?.role || 'none')) });
+    const routeDraw = document.getElementById('route-draw-section');
+    if (routeDraw) routeDraw.style.display = (me?.is_master === 1) ? 'block' : 'none';
+
+    document.getElementById('action-buttons').style.display = '';
+
     this.renderMembers(members);
 
     // Re-apply data-i18n attributes that may have been overwritten
@@ -806,6 +821,10 @@ const App = {
     this.map.locate({ setView: true, maxZoom: 16 });
 
     this.setupDrawingControls();
+
+    setTimeout(() => {
+      if (this.map) this.map.invalidateSize();
+    }, 100);
   },
 
   getColorForUser(userId) {

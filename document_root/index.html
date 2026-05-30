@@ -132,65 +132,71 @@
 
     <!-- SESSION -->
     <div id="session-page" class="page">
-      <div class="top-bar">
-        <div>
-          <h1 id="session-title"></h1>
-          <span style="font-size:13px;color:#777">
+      <div class="session-header">
+        <h1 id="session-title" class="session-title"></h1>
+
+        <div class="session-code-row">
+          <span>
             <span data-i18n="session.code">Code:</span>
             <strong id="session-code"></strong>
-            <button class="btn btn-sm btn-secondary" id="copy-code-btn" style="margin-left:8px" data-i18n="session.copy">Copy</button>
+            <button class="btn btn-sm btn-secondary" id="copy-code-btn" data-i18n="session.copy">Copy</button>
+          </span>
+          <span>
+            <button class="btn-icon" id="members-btn" title="Members">👥</button>
+            <button class="btn btn-sm btn-secondary" id="back-to-dashboard" data-i18n="session.back">Back</button>
           </span>
         </div>
-        <button class="btn btn-sm btn-secondary" id="back-to-dashboard" data-i18n="session.back">Back</button>
-      </div>
 
-      <div id="member-list"></div>
+        <div class="session-user-row">
+          <span id="session-user-label"></span>
+          <select id="role-select"></select>
+        </div>
 
-      <div id="your-role" style="font-size:14px;margin-bottom:8px"></div>
-
-      <div id="action-buttons" style="display:none">
-        <div id="session-toolbar">
-          <button class="btn btn-sm btn-secondary" id="role-passive-btn" data-i18n="session.bePassive">Be Passive Member</button>
-          <button class="btn btn-sm" id="role-lost-btn" data-i18n="session.beLost">Be Lost Person</button>
-          <button class="btn btn-sm" id="role-handler-btn" data-i18n="session.beHandler">Be Dog Handler</button>
+        <div id="action-buttons" style="display:none" class="session-actions">
+          <div id="hiding-controls" class="row" style="display:none">
+            <button class="btn btn-sm" id="start-hiding-btn" data-i18n="session.startHiding">Start Hiding</button>
+            <button class="btn btn-sm btn-danger" id="im-hidden-btn" data-i18n="session.imHidden">I'm Hidden</button>
+          </div>
+          <div id="search-controls" class="row" style="display:none">
+            <button class="btn btn-sm" id="start-search-btn" data-i18n="session.startSearch">Start Search</button>
+            <button class="btn btn-sm btn-success" id="found-btn" data-i18n="session.found">Found!</button>
+            <button class="btn btn-sm btn-danger" id="fail-btn" data-i18n="session.failed">Failed</button>
+          </div>
           <button class="btn btn-sm btn-secondary" id="show-summary-btn" data-i18n="session.viewSummary">View Summary</button>
+          <button class="btn btn-sm btn-secondary" id="jump-to-location-btn" data-i18n="session.jumpToLocation">📍 Jump to my location</button>
         </div>
 
-        <div id="hiding-controls" class="row" style="display:none;margin-bottom:8px">
-          <button class="btn btn-sm" id="start-hiding-btn" data-i18n="session.startHiding">Start Hiding</button>
-          <button class="btn btn-sm btn-danger" id="im-hidden-btn" data-i18n="session.imHidden">I'm Hidden</button>
-        </div>
-
-        <div id="search-controls" class="row" style="display:none;margin-bottom:8px">
-          <button class="btn btn-sm" id="start-search-btn" data-i18n="session.startSearch">Start Search</button>
-          <button class="btn btn-sm btn-success" id="found-btn" data-i18n="session.found">Found!</button>
-          <button class="btn btn-sm btn-danger" id="fail-btn" data-i18n="session.failed">Failed</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <button class="btn btn-sm btn-secondary" id="jump-to-location-btn" data-i18n="session.jumpToLocation">Jump to my location</button>
-      </div>
-
-      <div id="route-draw-section" style="display:none;margin-bottom:12px">
-        <div id="route-draw-panel">
-          <strong data-i18n="session.assignRoute">Assign Route</strong>
-          <div class="row" style="margin-top:8px;align-items:center">
-            <select id="route-target-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ddd">
-              <option value="" data-i18n="session.selectMember">Select member...</option>
-            </select>
-            <button class="btn btn-sm btn-secondary" id="toggle-draw-btn" data-i18n="session.drawRoute">Draw Route</button>
-            <button class="btn btn-sm btn-success" id="assign-route-btn" disabled data-i18n="session.assign">Assign</button>
+        <details id="route-draw-section" style="display:none">
+          <summary><strong data-i18n="session.assignRoute">Assign Route</strong></summary>
+          <div id="route-draw-panel">
+            <div class="row" style="margin-top:8px;align-items:center">
+              <select id="route-target-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border)">
+                <option value="" data-i18n="session.selectMember">Select member...</option>
+              </select>
+              <button class="btn btn-sm btn-secondary" id="toggle-draw-btn" data-i18n="session.drawRoute">Draw Route</button>
+              <button class="btn btn-sm btn-success" id="assign-route-btn" disabled data-i18n="session.assign">Assign</button>
+            </div>
+            <div style="margin-top:6px;font-size:13px;color:var(--text-secondary)">
+              <span id="waypoint-count">0 <span data-i18n="session.point">point</span>s</span>
+              &middot;
+              <label><input type="checkbox" id="snap-toggle"> <span data-i18n="session.snapToRoads">Snap to roads</span></label>
+            </div>
           </div>
-          <div style="margin-top:6px;font-size:13px;color:#666">
-            <span id="waypoint-count">0 <span data-i18n="session.point">point</span>s</span>
-            &middot;
-            <label><input type="checkbox" id="snap-toggle"> <span data-i18n="session.snapToRoads">Snap to roads</span></label>
-          </div>
-        </div>
+        </details>
       </div>
 
-      <div id="session-map" style="height:60vh;border-radius:12px"></div>
+      <div id="session-map"></div>
+    </div>
+
+    <!-- MEMBERS MODAL -->
+    <div id="members-modal" class="modal-overlay" style="display:none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 data-i18n="session.members">Members</h3>
+          <button class="btn-icon" id="members-modal-close">&times;</button>
+        </div>
+        <div id="member-list"></div>
+      </div>
     </div>
 
     <!-- SUMMARY -->
