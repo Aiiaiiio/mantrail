@@ -170,7 +170,7 @@ const App = {
 
     await I18n.init();
 
-    this.setTheme(localStorage.getItem('theme') || 'light');
+    this.setTheme(localStorage.getItem('theme') || 'system');
 
     document.addEventListener('change', (e) => {
       if (e.target.id === 'settings-language-select') {
@@ -384,23 +384,6 @@ const App = {
     document.getElementById('settings-btn').onclick = () => this.nav('settings');
     document.getElementById('logout-btn').onclick = () => this.logout();
 
-    const dnInput = document.getElementById('display-name-input');
-    const dn = this.currentUser?.display_name || this.currentUser?.name || '';
-    dnInput.value = dn;
-
-    document.getElementById('save-display-name-btn').onclick = async () => {
-      const val = dnInput.value.trim();
-      if (!val) return;
-      try {
-        const res = await API.updateProfile({ display_name: val });
-        this.currentUser = res.user;
-        API.setToken(res.token);
-        this.showSnackbar(I18n.t('dashboard.displayNameUpdated'));
-      } catch (e) {
-        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
-      }
-    };
-
     document.getElementById('add-dog-btn').onclick = async () => {
       const input = document.getElementById('new-dog-name');
       const name = input.value.trim();
@@ -448,12 +431,27 @@ const App = {
   setTheme(theme) {
     this.theme = theme;
     localStorage.setItem('theme', theme);
-    document.documentElement.dataset.theme = theme;
+
+    if (this._themeMqListener) {
+      this._themeMq.removeEventListener('change', this._themeMqListener);
+      this._themeMqListener = null;
+    }
+
+    if (theme === 'system') {
+      this._themeMq = window.matchMedia('(prefers-color-scheme: dark)');
+      this._themeMqListener = (e) => {
+        document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+      };
+      this._themeMq.addEventListener('change', this._themeMqListener);
+      document.documentElement.dataset.theme = this._themeMq.matches ? 'dark' : 'light';
+    } else {
+      document.documentElement.dataset.theme = theme;
+    }
   },
 
   renderSettingsPage() {
     document.getElementById('settings-language-select').value = I18n.locale;
-    document.getElementById('settings-theme-select').value = this.theme || 'light';
+    document.getElementById('settings-theme-select').value = this.theme || 'system';
 
     const card = document.getElementById('settings-access-card');
     if (this.currentUser?.can_invite) {
@@ -462,6 +460,21 @@ const App = {
     } else {
       card.style.display = 'none';
     }
+
+    const dnInput = document.getElementById('settings-display-name-input');
+    dnInput.value = this.currentUser?.display_name || this.currentUser?.name || '';
+    document.getElementById('settings-save-display-name-btn').onclick = async () => {
+      const val = dnInput.value.trim();
+      if (!val) return;
+      try {
+        const res = await API.updateProfile({ display_name: val });
+        this.currentUser = res.user;
+        API.setToken(res.token);
+        this.showSnackbar(I18n.t('dashboard.displayNameUpdated'));
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+    };
 
     document.getElementById('back-from-settings-btn').onclick = () => this.nav('dashboard');
   },
