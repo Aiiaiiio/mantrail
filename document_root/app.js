@@ -441,12 +441,28 @@ const App = {
       this._themeMq = window.matchMedia('(prefers-color-scheme: dark)');
       this._themeMqListener = (e) => {
         document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+        this._swapTileLayers();
       };
       this._themeMq.addEventListener('change', this._themeMqListener);
       document.documentElement.dataset.theme = this._themeMq.matches ? 'dark' : 'light';
     } else {
       document.documentElement.dataset.theme = theme;
     }
+
+    this._swapTileLayers();
+  },
+
+  getTileUrl() {
+    const isDark = (document.documentElement.dataset.theme === 'dark');
+    const style = isDark ? 'streets-dark' : 'streets';
+    return `https://api.maptiler.com/maps/${style}/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0`;
+  },
+
+  _swapTileLayers() {
+    const url = this.getTileUrl();
+    [this._tileLayer, this._summaryTileLayer, this._leTileLayer].forEach(l => {
+      if (l) l.setUrl(url);
+    });
   },
 
   renderSettingsPage() {
@@ -782,7 +798,7 @@ const App = {
 
     this.map = L.map('session-map').setView([47.2, 18.4], 13);
 
-    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0`, {
+    this._tileLayer = L.tileLayer(this.getTileUrl(), {
       tileSize: 512, zoomOffset: -1, maxZoom: 22,
       attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
     }).addTo(this.map);
@@ -1242,7 +1258,7 @@ const App = {
       }
 
       this.summaryMap = L.map('summary-map').setView([47.2, 18.4], 13);
-      L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0`, {
+      this._summaryTileLayer = L.tileLayer(this.getTileUrl(), {
         tileSize: 512, zoomOffset: -1, maxZoom: 22,
         attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
       }).addTo(this.summaryMap);
@@ -1423,7 +1439,7 @@ const App = {
 
       if (hasCoords) {
         const detailMap = L.map('detail-map').setView([e.place_lat, e.place_lng], 14);
-        L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0', {
+        L.tileLayer(this.getTileUrl(), {
           tileSize: 512, zoomOffset: -1, maxZoom: 22,
           attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
         }).addTo(detailMap);
@@ -1592,7 +1608,7 @@ const App = {
     if (!mapEl) return;
 
     this.leMap = L.map(mapEl).setView([47.2, 18.4], 13);
-    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}@2x.png?key=OP4WviE7Xy4CtJzPyOy0`, {
+    this._leTileLayer = L.tileLayer(this.getTileUrl(), {
       tileSize: 512, zoomOffset: -1, maxZoom: 22,
       attribution: '&copy; OpenStreetMap contributors &copy; MapTiler',
     }).addTo(this.leMap);
