@@ -25,7 +25,7 @@ router.post('/:id/routes', (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
   const member = q.findMember.get(session.id, req.user.userId);
-  if (!member || member.role !== 'session_master') {
+  if (!member || member.is_master !== 1) {
     return res.status(403).json({ error: 'Only session master can assign routes' });
   }
 
@@ -50,7 +50,7 @@ router.delete('/:id/routes/:routeId', (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found' });
 
   const member = q.findMember.get(session.id, req.user.userId);
-  if (!member || member.role !== 'session_master') {
+  if (!member || member.is_master !== 1) {
     return res.status(403).json({ error: 'Only session master can delete routes' });
   }
 

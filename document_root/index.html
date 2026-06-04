@@ -166,21 +166,28 @@
           <button class="btn btn-sm btn-secondary" id="jump-to-location-btn" data-i18n="session.jumpToLocation">📍 Jump to my location</button>
         </div>
 
-        <details id="route-draw-section" style="display:none">
-          <summary><strong data-i18n="session.assignRoute">Assign Route</strong></summary>
-          <div id="route-draw-panel">
-            <div class="row" style="margin-top:8px;align-items:center">
-              <select id="route-target-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border)">
-                <option value="" data-i18n="session.selectMember">Select member...</option>
+        <details id="initiate-search-section" style="display:none">
+          <summary><strong data-i18n="session.initiateSearch">Initiate Search</strong></summary>
+          <div id="initiate-search-panel" style="padding:8px 0">
+            <div class="row" style="margin-top:6px;align-items:center">
+              <select id="init-handler-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border)">
+                <option value="" data-i18n="session.selectHandler">Select handler...</option>
               </select>
-              <button class="btn btn-sm btn-secondary" id="toggle-draw-btn" data-i18n="session.drawRoute">Draw Route</button>
-              <button class="btn btn-sm btn-success" id="assign-route-btn" disabled data-i18n="session.assign">Assign</button>
+              <select id="init-lost-select" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border)">
+                <option value="" data-i18n="session.selectLostPerson">Select lost person...</option>
+              </select>
             </div>
-            <div style="margin-top:6px;font-size:13px;color:var(--text-secondary)">
-              <span id="waypoint-count">0 <span data-i18n="session.point">point</span>s</span>
+            <div class="row" style="margin-top:8px;align-items:center;gap:8px">
+              <button class="btn btn-sm btn-secondary" id="init-toggle-draw-btn" data-i18n="session.drawRoute">Draw Route</button>
             </div>
+            <div id="init-waypoint-info" style="margin-top:4px;font-size:13px;color:var(--text-secondary)">
+              <span id="init-waypoint-count">0 <span data-i18n="session.points">points</span></span>
+            </div>
+            <button class="btn btn-sm" id="initiate-search-btn" disabled style="margin-top:8px" data-i18n="session.initiateSearch">Initiate Search</button>
           </div>
         </details>
+
+
       </div>
 
       <div id="session-map"></div>

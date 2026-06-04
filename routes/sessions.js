@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { q, generateCode, now, uuid } = require('../db/queries');
 const { authenticateToken } = require('../middleware/auth');
+const { broadcastToSession, sendToUser } = require('../ws/sessions');
 
 const router = Router();
 
@@ -103,6 +104,44 @@ router.post('/:id/role', (req, res) => {
 
   const members = q.findSessionMembers.all(session.id);
   res.json({ session, members });
+});
+
+router.post('/:id/initiate-search', (req, res) => {
+  const { handlerUserId, lostUserId, routeWaypoints } = req.body;
+
+  const session = q.findSessionById.get(req.params.id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+
+  const member = q.findMember.get(session.id, req.user.userId);
+  if (!member || member.is_master !== 1) {
+    return res.status(403).json({ error: 'Only session master can initiate searches' });
+  }
+
+  if (handlerUserId === lostUserId) {
+    return res.status(400).json({ error: 'Handler and lost person must be different' });
+  }
+
+  const handlerMember = q.findMember.get(session.id, handlerUserId);
+  if (!handlerMember) return res.status(400).json({ error: 'Handler not found in session' });
+
+  const lostMember = q.findMember.get(session.id, lostUserId);
+  if (!lostMember) return res.status(400).json({ error: 'Lost person not found in session' });
+
+  q.updateMemberRole.run('dog_handler', session.id, handlerUserId);
+  q.updateMemberRole.run('lost_person', session.id, lostUserId);
+
+  broadcastToSession(session.id, { type: 'role_changed', userId: handlerUserId, role: 'dog_handler' });
+  broadcastToSession(session.id, { type: 'role_changed', userId: lostUserId, role: 'lost_person' });
+
+  let route = null;
+  if (routeWaypoints && Array.isArray(routeWaypoints) && routeWaypoints.length >= 2) {
+    const routeId = uuid();
+    q.insertAssignedRoute.run(routeId, session.id, req.user.userId, lostUserId, JSON.stringify(routeWaypoints), 0);
+    route = { id: routeId, sessionId: session.id, assignedTo: lostUserId, waypoints: routeWaypoints, snapped: false };
+    sendToUser(lostUserId, { type: 'route_assigned', route });
+  }
+
+  res.json({ success: true, route });
 });
 
 module.exports = router;

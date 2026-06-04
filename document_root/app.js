@@ -127,8 +127,6 @@ const App = {
   searchPolyline: null,
   assignedPolyline: null,
   membersData: {},
-  drawingWaypoints: [],
-  drawingTargetUserId: null,
   locationWatchId: null,
   locationInterval: null,
   trackedWaypoints: [],
@@ -713,7 +711,13 @@ const App = {
     this.updateSessionUI();
 
     document.getElementById('action-buttons').style.display = 'block';
-    document.getElementById('route-draw-section').style.display = isMaster ? 'block' : 'none';
+
+    // Initiate Search section
+    const initSection = document.getElementById('initiate-search-section');
+    if (initSection) initSection.style.display = isMaster ? 'block' : 'none';
+
+    this.populateInitSelects(members);
+    this.setupInitiateSearchControls();
   },
 
   offerLogEntry(res) {
@@ -767,6 +771,8 @@ const App = {
         select.value = currentVal;
       }
     }
+
+    this.populateInitSelects(members);
   },
 
   updateSessionUI() {
@@ -796,6 +802,9 @@ const App = {
 
     const routeDraw = document.getElementById('route-draw-section');
     if (routeDraw) routeDraw.style.display = (me?.is_master === 1) ? 'block' : 'none';
+
+    const initSection = document.getElementById('initiate-search-section');
+    if (initSection) initSection.style.display = (me?.is_master === 1) ? 'block' : 'none';
 
     document.getElementById('action-buttons').style.display = '';
 
@@ -991,6 +1000,8 @@ const App = {
   setupDrawingControls() {
     const toggleBtn = document.getElementById('toggle-draw-btn');
     const assignBtn = document.getElementById('assign-route-btn');
+    if (!toggleBtn || !assignBtn) return;
+
     const waypointCount = document.getElementById('waypoint-count');
 
     toggleBtn.onclick = () => {
@@ -998,6 +1009,10 @@ const App = {
       toggleBtn.textContent = this.isDrawing ? I18n.t('session.stopDrawing') : I18n.t('session.drawRoute');
 
       if (this.isDrawing) {
+        // Disable init drawing if active
+        if (this.initDrawing) {
+          document.getElementById('init-toggle-draw-btn').click();
+        }
         this.drawingWaypoints = [];
         this.drawingMarkers = [];
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
@@ -1065,6 +1080,128 @@ const App = {
     if (!this.drawingMarkers) { this.drawingMarkers = []; return; }
     this.drawingMarkers.forEach(m => { if (this.map) this.map.removeLayer(m); });
     this.drawingMarkers = [];
+  },
+
+  _clearInitDrawing() {
+    if (this.initMarkers) this.initMarkers.forEach(m => { if (this.map) this.map.removeLayer(m); });
+    this.initMarkers = [];
+    if (this.initPolyline) { this.initPolyline.remove(); this.initPolyline = null; }
+    if (this.initDrawCursor) { this.map.removeLayer(this.initDrawCursor); this.initDrawCursor = null; }
+    if (this.map) this.map.off('click', this.onInitMapClick);
+    this.initDrawing = false;
+    this.initWaypoints = [];
+  },
+
+  populateInitSelects(members) {
+    if (!members) members = this.currentSessionData?.members || [];
+    const handlerSel = document.getElementById('init-handler-select');
+    const lostSel = document.getElementById('init-lost-select');
+    if (!handlerSel || !lostSel) return;
+    const currentHandler = handlerSel.value;
+    const currentLost = lostSel.value;
+    const opts = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    handlerSel.innerHTML = '<option value="">' + I18n.t('session.selectHandler') + '</option>' + opts;
+    lostSel.innerHTML = '<option value="">' + I18n.t('session.selectLostPerson') + '</option>' + opts;
+    if (currentHandler) handlerSel.value = currentHandler;
+    if (currentLost) lostSel.value = currentLost;
+    this._updateInitiateSearchBtn();
+  },
+
+  _updateInitiateSearchBtn() {
+    const handlerVal = document.getElementById('init-handler-select')?.value;
+    const lostVal = document.getElementById('init-lost-select')?.value;
+    const btn = document.getElementById('initiate-search-btn');
+    if (btn) btn.disabled = !handlerVal || !lostVal;
+  },
+
+  setupInitiateSearchControls() {
+    const drawBtn = document.getElementById('init-toggle-draw-btn');
+    const waypointInfo = document.getElementById('init-waypoint-count');
+    const initiateBtn = document.getElementById('initiate-search-btn');
+
+    document.getElementById('init-handler-select').onchange = () => this._updateInitiateSearchBtn();
+    document.getElementById('init-lost-select').onchange = () => this._updateInitiateSearchBtn();
+
+    drawBtn.onclick = () => {
+      if (!this.map) return;
+      if (this.initDrawing) {
+        this._clearInitDrawing();
+        drawBtn.textContent = I18n.t('session.drawRoute');
+        this._updateInitDrawingInfo();
+        return;
+      }
+      // Disable regular drawing if active
+      if (this.isDrawing && document.getElementById('toggle-draw-btn')) {
+        document.getElementById('toggle-draw-btn').click();
+      }
+      this._clearInitDrawing();
+      this.initDrawing = true;
+      this.initWaypoints = [];
+      this.initMarkers = [];
+      drawBtn.textContent = I18n.t('session.stopDrawing');
+
+      this.initPolyline = L.polyline([], {
+        color: '#8E24AA', weight: 4, opacity: 0.9,
+      }).addTo(this.map);
+
+      this.initDrawCursor = L.circleMarker([0, 0], {
+        radius: 5, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.5,
+      }).addTo(this.map);
+
+      this.map.on('mousemove', (e) => {
+        if (this.initDrawCursor) this.initDrawCursor.setLatLng(e.latlng);
+      });
+
+      this.map.on('click', this.onInitMapClick);
+    };
+
+    this.onInitMapClick = (e) => {
+      this.initWaypoints.push({ lat: e.latlng.lat, lng: e.latlng.lng });
+      this._updateInitDrawingInfo();
+
+      if (this.initPolyline) {
+        this.initPolyline.setLatLngs(this.initWaypoints.map(w => [w.lat, w.lng]));
+      }
+
+      const marker = L.circleMarker([e.latlng.lat, e.latlng.lng], {
+        radius: 4, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.8,
+      }).addTo(this.map);
+      this.initMarkers.push(marker);
+    };
+
+    initiateBtn.onclick = async () => {
+      const handlerId = document.getElementById('init-handler-select').value;
+      const lostId = document.getElementById('init-lost-select').value;
+      if (!handlerId || !lostId) return;
+
+      if (handlerId === lostId) {
+        this.showSnackbar(I18n.t('session.initSameUser'));
+        return;
+      }
+
+      const routeWaypoints = (this.initWaypoints && this.initWaypoints.length >= 2) ? [...this.initWaypoints] : null;
+
+      initiateBtn.disabled = true;
+      try {
+        await API.initiateSearch(this.currentSession.id, handlerId, lostId, routeWaypoints);
+        this.showSnackbar(I18n.t('session.searchInitiated'));
+        this._clearInitDrawing();
+        this.populateInitSelects();
+        document.getElementById('init-handler-select').value = '';
+        document.getElementById('init-lost-select').value = '';
+        this._updateInitiateSearchBtn();
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+      initiateBtn.disabled = false;
+    };
+  },
+
+  _updateInitDrawingInfo() {
+    const el = document.getElementById('init-waypoint-count');
+    if (!el) return;
+    const count = this.initWaypoints ? this.initWaypoints.length : 0;
+    el.textContent = count + ' ' + I18n.t('session.points');
   },
 
   // ========== LOCATION TRACKING ==========
@@ -1714,6 +1851,8 @@ const App = {
     this._clearDrawingMarkers();
     if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
     if (this.drawCursor && this.map) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
+
+    this._clearInitDrawing();
 
     this.currentSession = null;
     this.currentSessionData = null;

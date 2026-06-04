@@ -131,19 +131,6 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 
 #session-map { flex: 1; min-height: 0; border: none; }
 
-/* ===== DETAILS / SUMMARY (collapsible route drawer) ===== */
-#route-draw-section { margin-top: 4px; }
-#route-draw-section summary {
-  cursor: pointer; font-size: 14px; padding: 4px 0; user-select: none;
-}
-#route-draw-section summary::marker { color: var(--text-secondary); }
-
-#route-draw-panel {
-  background: var(--card-bg); border-radius: 12px; padding: 12px;
-  box-shadow: 0 2px 8px var(--shadow-strong); margin-top: 8px;
-}
-#route-draw-panel select, #route-draw-panel button { margin-top: 8px; }
-
 /* ===== MEMBERS MODAL ===== */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 999;

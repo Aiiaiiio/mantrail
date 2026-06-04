@@ -74,6 +74,9 @@ const API = {
   imHidden(sessionId, extra) { return this.post(`/api/sessions/${sessionId}/im-hidden`, extra || {}); },
 
   // Search
+  initiateSearch(sessionId, handlerUserId, lostUserId, routeWaypoints) {
+    return this.post(`/api/sessions/${sessionId}/initiate-search`, { handlerUserId, lostUserId, routeWaypoints });
+  },
   startSearch(sessionId) { return this.post(`/api/sessions/${sessionId}/start-search`); },
   searchResult(sessionId, result, extra) {
     return this.post(`/api/sessions/${sessionId}/search-result`, { result, ...(extra || {}) });
