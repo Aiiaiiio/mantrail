@@ -646,16 +646,6 @@ const App = {
       });
     };
 
-    document.getElementById('role-select').onchange = () => {
-      const newRole = document.getElementById('role-select').value;
-      if (!newRole) return;
-      API.changeRole(session.id, newRole).then(r => {
-        this.currentSessionData = r;
-        this.updateSessionUI();
-        WS.send({ type: 'role_changed', role: newRole });
-      }).catch(e => this.showSnackbar(I18n.t('errors.generic', { message: e.message })));
-    };
-
     document.getElementById('members-btn').onclick = () => {
       document.getElementById('members-modal').style.display = 'flex';
     };
@@ -782,20 +772,9 @@ const App = {
     const isLost = me?.role === 'lost_person';
     const isHandler = me?.role === 'dog_handler';
 
-    const hasLostPerson = members.some(m => m.role === 'lost_person');
-    const hasHandler = members.some(m => m.role === 'dog_handler');
-
-    const select = document.getElementById('role-select');
-    const currentRole = me?.role || 'passive_member';
-    const roles = ['passive_member', 'lost_person', 'dog_handler'];
-    select.innerHTML = roles.map(r => {
-      const taken = (r === 'lost_person' && hasLostPerson && r !== currentRole) ||
-                    (r === 'dog_handler' && hasHandler && r !== currentRole);
-      const label = I18n.t('roles.' + r);
-      return `<option value="${r}" ${r === currentRole ? 'selected' : ''} ${taken ? 'disabled' : ''}>${label}${taken ? ' (' + I18n.t('session.taken') + ')' : ''}</option>`;
-    }).join('');
-
     document.getElementById('session-user-label').textContent = this.currentUser.name;
+    const badge = document.getElementById('current-role-badge');
+    if (badge) badge.textContent = I18n.t('roles.' + (me?.role || 'passive_member'));
 
     document.getElementById('hiding-controls').style.display = isLost ? 'flex' : 'none';
     document.getElementById('search-controls').style.display = isHandler ? 'flex' : 'none';
