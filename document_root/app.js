@@ -1000,6 +1000,7 @@ const App = {
 
       if (this.isDrawing) {
         this.drawingWaypoints = [];
+        this.drawingMarkers = [];
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
 
@@ -1018,6 +1019,7 @@ const App = {
         });
       } else {
         this.map.off('click', this.onMapClick);
+        this._clearDrawingMarkers();
         if (this.drawingPolyline) { this.map.removeLayer(this.drawingPolyline); this.drawingPolyline = null; }
         if (this.drawCursor) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
       }
@@ -1031,6 +1033,11 @@ const App = {
       if (this.drawingPolyline) {
         this.drawingPolyline.setLatLngs(this.drawingWaypoints.map(w => [w.lat, w.lng]));
       }
+
+      const marker = L.circleMarker([e.latlng.lat, e.latlng.lng], {
+        radius: 4, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.8,
+      }).addTo(this.map);
+      this.drawingMarkers.push(marker);
     };
 
     assignBtn.onclick = async () => {
@@ -1055,6 +1062,7 @@ const App = {
         this.drawingWaypoints = [];
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
+        this._clearDrawingMarkers();
         if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
         this.isDrawing = false;
         toggleBtn.textContent = I18n.t('session.drawRoute');
@@ -1064,6 +1072,12 @@ const App = {
         this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
+  },
+
+  _clearDrawingMarkers() {
+    if (!this.drawingMarkers) { this.drawingMarkers = []; return; }
+    this.drawingMarkers.forEach(m => { if (this.map) this.map.removeLayer(m); });
+    this.drawingMarkers = [];
   },
 
   async snapToRoads(waypoints) {
@@ -1732,6 +1746,7 @@ const App = {
 
     this.isDrawing = false;
     this.drawingWaypoints = [];
+    this._clearDrawingMarkers();
     if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
     if (this.drawCursor && this.map) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
 
