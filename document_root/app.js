@@ -1112,7 +1112,7 @@ const App = {
   async _snapWaypoints(waypoints) {
     if (!waypoints || waypoints.length < 2) return null;
     const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?geometries=geojson&overview=full&alternatives=false`;
+    const url = `https://router.project-osrm.org/route/v1/walking/${coords}?geometries=geojson&overview=full&alternatives=false`;
 
     const res = await fetch(url);
     const data = await res.json();
