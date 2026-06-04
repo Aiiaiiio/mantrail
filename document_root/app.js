@@ -1003,6 +1003,10 @@ const App = {
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
 
+        this.drawingPolyline = L.polyline([], {
+          color: '#8E24AA', weight: 4, opacity: 0.9,
+        }).addTo(this.map);
+
         this.map.on('click', this.onMapClick);
 
         this.drawCursor = L.circleMarker([0, 0], {
@@ -1014,6 +1018,7 @@ const App = {
         });
       } else {
         this.map.off('click', this.onMapClick);
+        if (this.drawingPolyline) { this.map.removeLayer(this.drawingPolyline); this.drawingPolyline = null; }
         if (this.drawCursor) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
       }
     };
@@ -1023,9 +1028,9 @@ const App = {
       waypointCount.textContent = `${this.drawingWaypoints.length} ${I18n.t('session.points')}`;
       assignBtn.disabled = this.drawingWaypoints.length < 2;
 
-      L.circleMarker([e.latlng.lat, e.latlng.lng], {
-        radius: 4, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.8,
-      }).addTo(this.map);
+      if (this.drawingPolyline) {
+        this.drawingPolyline.setLatLngs(this.drawingWaypoints.map(w => [w.lat, w.lng]));
+      }
     };
 
     assignBtn.onclick = async () => {
@@ -1050,6 +1055,11 @@ const App = {
         this.drawingWaypoints = [];
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
+        if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
+        this.isDrawing = false;
+        toggleBtn.textContent = I18n.t('session.drawRoute');
+        this.map.off('click', this.onMapClick);
+        if (this.drawCursor) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
       } catch (e) {
         this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
@@ -1722,6 +1732,7 @@ const App = {
 
     this.isDrawing = false;
     this.drawingWaypoints = [];
+    if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
     if (this.drawCursor && this.map) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
 
     this.currentSession = null;
