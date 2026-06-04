@@ -991,7 +991,6 @@ const App = {
   setupDrawingControls() {
     const toggleBtn = document.getElementById('toggle-draw-btn');
     const assignBtn = document.getElementById('assign-route-btn');
-    const snapToggle = document.getElementById('snap-toggle');
     const waypointCount = document.getElementById('waypoint-count');
 
     toggleBtn.onclick = () => {
@@ -1001,7 +1000,6 @@ const App = {
       if (this.isDrawing) {
         this.drawingWaypoints = [];
         this.drawingMarkers = [];
-        this._snapPreviewVersion = 0;
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
 
@@ -1021,7 +1019,6 @@ const App = {
       } else {
         this.map.off('click', this.onMapClick);
         this._clearDrawingMarkers();
-        this._clearSnapPreview();
         if (this.drawingPolyline) { this.map.removeLayer(this.drawingPolyline); this.drawingPolyline = null; }
         if (this.drawCursor) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
       }
@@ -1040,35 +1037,14 @@ const App = {
         radius: 4, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.8,
       }).addTo(this.map);
       this.drawingMarkers.push(marker);
-
-      if (this.drawingWaypoints.length >= 2) {
-        this._updateSnapPreview();
-      }
-    };
-
-    snapToggle.onchange = () => {
-      this._updateSnapPreview();
     };
 
     assignBtn.onclick = async () => {
       const targetId = document.getElementById('route-target-select').value;
       if (!targetId || this.drawingWaypoints.length < 2) return;
 
-      const snapped = snapToggle.checked;
-      this._clearSnapPreview();
-
-      let waypoints = [...this.drawingWaypoints];
-      if (snapped) {
-        try {
-          const snappedRes = await this.snapToRoads(waypoints);
-          if (snappedRes) waypoints = snappedRes;
-        } catch (e) {
-          this.showSnackbar(I18n.t('session.snapFailed'));
-        }
-      }
-
       try {
-        await API.assignRoute(this.currentSession.id, targetId, waypoints, snapped);
+        await API.assignRoute(this.currentSession.id, targetId, [...this.drawingWaypoints], false);
         this.showSnackbar(I18n.t('session.routeAssigned'));
         this.drawingWaypoints = [];
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
@@ -1089,58 +1065,6 @@ const App = {
     if (!this.drawingMarkers) { this.drawingMarkers = []; return; }
     this.drawingMarkers.forEach(m => { if (this.map) this.map.removeLayer(m); });
     this.drawingMarkers = [];
-  },
-
-  _clearSnapPreview() {
-    if (this.snapPreviewPolyline) { this.snapPreviewPolyline.remove(); this.snapPreviewPolyline = null; }
-  },
-
-  async _updateSnapPreview() {
-    this._clearSnapPreview();
-    const snapToggle = document.getElementById('snap-toggle');
-    if (!snapToggle?.checked || this.drawingWaypoints.length < 2) return;
-    const version = ++this._snapPreviewVersion;
-    const snapped = await this._snapWaypoints(this.drawingWaypoints);
-    if (version !== this._snapPreviewVersion) return;
-    if (snapped) {
-      this.snapPreviewPolyline = L.polyline(snapped.map(p => [p.lat, p.lng]), {
-        color: '#00ACC1', weight: 3, opacity: 0.5, dashArray: '6, 6',
-      }).addTo(this.map);
-    }
-  },
-
-  async _snapWaypoints(waypoints) {
-    if (!waypoints || waypoints.length < 2) return null;
-    const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-
-    for (const profile of ['walking', 'driving']) {
-      try {
-        const res = await fetch(`https://router.project-osrm.org/route/v1/${profile}/${coords}?geometries=geojson&overview=full&alternatives=false`);
-        const data = await res.json();
-        if (data.code === 'Ok' && data.routes?.length) {
-          return data.routes[0].geometry.coordinates.map(c => ({
-            lat: c[1],
-            lng: c[0],
-          }));
-        }
-      } catch (e) {
-        // try next profile
-      }
-    }
-
-    return waypoints;
-  },
-
-  async snapToRoads(waypoints) {
-    const snapped = await this._snapWaypoints(waypoints);
-    if (!snapped) return null;
-
-    if (this.assignedPolyline) this.assignedPolyline.remove();
-    this.assignedPolyline = L.polyline(snapped.map(p => [p.lat, p.lng]), {
-      color: '#8E24AA', weight: 4, opacity: 0.9, dashArray: '10, 10',
-    }).addTo(this.map);
-
-    return snapped;
   },
 
   // ========== LOCATION TRACKING ==========
@@ -1788,7 +1712,6 @@ const App = {
     this.isDrawing = false;
     this.drawingWaypoints = [];
     this._clearDrawingMarkers();
-    this._clearSnapPreview();
     if (this.drawingPolyline) { this.drawingPolyline.remove(); this.drawingPolyline = null; }
     if (this.drawCursor && this.map) { this.map.removeLayer(this.drawCursor); this.drawCursor = null; }
 
