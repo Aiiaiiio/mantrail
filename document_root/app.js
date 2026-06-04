@@ -1001,6 +1001,7 @@ const App = {
       if (this.isDrawing) {
         this.drawingWaypoints = [];
         this.drawingMarkers = [];
+        this._snapPreviewVersion = 0;
         waypointCount.textContent = `0 ${I18n.t('session.points')}`;
         assignBtn.disabled = true;
 
@@ -1039,18 +1040,14 @@ const App = {
         radius: 4, color: '#8E24AA', fillColor: '#8E24AA', fillOpacity: 0.8,
       }).addTo(this.map);
       this.drawingMarkers.push(marker);
+
+      if (this.drawingWaypoints.length >= 2) {
+        this._updateSnapPreview();
+      }
     };
 
-    snapToggle.onchange = async () => {
-      this._clearSnapPreview();
-      if (snapToggle.checked && this.drawingWaypoints.length >= 2) {
-        const snapped = await this._snapWaypoints(this.drawingWaypoints);
-        if (snapped) {
-          this.snapPreviewPolyline = L.polyline(snapped.map(p => [p.lat, p.lng]), {
-            color: '#00ACC1', weight: 3, opacity: 0.5, dashArray: '6, 6',
-          }).addTo(this.map);
-        }
-      }
+    snapToggle.onchange = () => {
+      this._updateSnapPreview();
     };
 
     assignBtn.onclick = async () => {
@@ -1098,17 +1095,31 @@ const App = {
     if (this.snapPreviewPolyline) { this.snapPreviewPolyline.remove(); this.snapPreviewPolyline = null; }
   },
 
+  async _updateSnapPreview() {
+    this._clearSnapPreview();
+    const snapToggle = document.getElementById('snap-toggle');
+    if (!snapToggle?.checked || this.drawingWaypoints.length < 2) return;
+    const version = ++this._snapPreviewVersion;
+    const snapped = await this._snapWaypoints(this.drawingWaypoints);
+    if (version !== this._snapPreviewVersion) return;
+    if (snapped) {
+      this.snapPreviewPolyline = L.polyline(snapped.map(p => [p.lat, p.lng]), {
+        color: '#00ACC1', weight: 3, opacity: 0.5, dashArray: '6, 6',
+      }).addTo(this.map);
+    }
+  },
+
   async _snapWaypoints(waypoints) {
     if (!waypoints || waypoints.length < 2) return null;
     const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const url = `https://router.project-osrm.org/match/v1/driving/${coords}?steps=true&geometries=geojson&overview=full`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?geometries=geojson&overview=full&alternatives=false`;
 
     const res = await fetch(url);
     const data = await res.json();
 
-    if (data.code !== 'Ok' || !data.matchings?.length) return null;
+    if (data.code !== 'Ok' || !data.routes?.length) return null;
 
-    return data.matchings[0].geometry.coordinates.map(c => ({
+    return data.routes[0].geometry.coordinates.map(c => ({
       lat: c[1],
       lng: c[0],
     }));
