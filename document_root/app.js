@@ -1112,19 +1112,20 @@ const App = {
   async _snapWaypoints(waypoints) {
     if (!waypoints || waypoints.length < 2) return null;
     const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const url = `https://router.project-osrm.org/route/v1/walking/${coords}?geometries=geojson&overview=full&alternatives=false`;
 
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.code === 'Ok' && data.routes?.length) {
-        return data.routes[0].geometry.coordinates.map(c => ({
-          lat: c[1],
-          lng: c[0],
-        }));
+    for (const profile of ['walking', 'driving']) {
+      try {
+        const res = await fetch(`https://router.project-osrm.org/route/v1/${profile}/${coords}?geometries=geojson&overview=full&alternatives=false`);
+        const data = await res.json();
+        if (data.code === 'Ok' && data.routes?.length) {
+          return data.routes[0].geometry.coordinates.map(c => ({
+            lat: c[1],
+            lng: c[0],
+          }));
+        }
+      } catch (e) {
+        // try next profile
       }
-    } catch (e) {
-      // fall through to pass-through
     }
 
     return waypoints;
