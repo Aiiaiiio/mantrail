@@ -92,6 +92,9 @@ const API = {
   // Summary
   getSummary(sessionId) { return this.get(`/api/sessions/${sessionId}/summary`); },
 
+  // Users (admin only)
+  getUsers() { return this.get('/api/auth/users'); },
+
   // Profile
   updateProfile(data) { return this.put('/api/auth/profile', data); },
 
@@ -101,7 +104,10 @@ const API = {
   deleteDog(id) { return this.del(`/api/dogs/${id}`); },
 
   // Log
-  getLogEntries() { return this.get('/api/log'); },
+  getLogEntries(userIds) {
+    const params = userIds && userIds.length ? `?userIds=${userIds.join(',')}` : '';
+    return this.get(`/api/log${params}`);
+  },
   getLogEntry(id) { return this.get(`/api/log/${id}`); },
   createLogEntry(data) { return this.post('/api/log', data); },
   updateLogEntry(id, data) { return this.put(`/api/log/${id}`, data); },

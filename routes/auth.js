@@ -171,6 +171,12 @@ router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: userToJSON(user) });
 });
 
+router.get('/users', authenticateToken, (req, res) => {
+  if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+  const users = q.findAllUsers.all();
+  res.json({ users });
+});
+
 router.put('/profile', authenticateToken, (req, res) => {
   const { display_name } = req.body;
   if (!display_name || !display_name.trim()) {
@@ -249,3 +255,4 @@ router.delete('/invite/tokens/:id', (req, res) => {
 });
 
 module.exports = router;
+module.exports.canInvite = canInvite;

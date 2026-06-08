@@ -16,6 +16,7 @@
     "newSession": "+ New Session",
     "joinWithCode": "Join with Code",
     "myLog": "My Log",
+    "logViewer": "Log Viewer",
     "sessionName": "Session name:",
     "enterCode": "Enter invite code (e.g. MT-XXXXXX):",
     "noSessions": "No sessions yet. Create one or join with a code!",
@@ -113,7 +114,10 @@
     "delete": "Delete",
     "deleteConfirm": "Delete this log entry?",
     "entryDeleted": "Entry deleted!",
-    "back": "Back"
+    "back": "Back",
+    "filterByUser": "Filter by user",
+    "clearFilter": "Clear filter",
+    "viewerTitle": "Log Viewer"
   },
   "logEntry": {
     "newTitle": "New Log Entry",
@@ -156,7 +160,8 @@
     "weather": "Weather",
     "difficulties": "Difficulties",
     "feelings": "Feelings",
-    "notes": "Notes"
+    "notes": "Notes",
+    "owner": "Owner"
   },
   "weather": {
     "0": "Clear sky",
@@ -238,6 +243,13 @@
     "hu": "Magyar",
     "en": "English",
     "label": "Language"
+  },
+  "userSelector": {
+    "title": "Select users",
+    "search": "Search...",
+    "selected": "{n} selected",
+    "apply": "Apply",
+    "noResults": "No users found"
   },
   "settings": {
     "title": "Settings",

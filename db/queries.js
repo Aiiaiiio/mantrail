@@ -74,8 +74,13 @@ const q = {
     difficulties = ?, path_type = ?, handler_feelings = ?, notes = ?,
     updated_at = datetime('now')
     WHERE id = ? AND user_id = ?`),
-  findLogEntries: db.prepare('SELECT * FROM log_entries WHERE user_id = ? ORDER BY created_at DESC'),
-  findLogEntryById: db.prepare('SELECT * FROM log_entries WHERE id = ?'),
+  findAllUsers: db.prepare('SELECT id, name, email FROM users ORDER BY name'),
+  findLogEntries: db.prepare(`SELECT le.*, u.name as user_name
+    FROM log_entries le INNER JOIN users u ON u.id = le.user_id
+    WHERE le.user_id = ? ORDER BY le.created_at DESC`),
+  findLogEntryById: db.prepare(`SELECT le.*, u.name as user_name
+    FROM log_entries le INNER JOIN users u ON u.id = le.user_id
+    WHERE le.id = ?`),
   deleteLogEntry: db.prepare('DELETE FROM log_entries WHERE id = ? AND user_id = ?'),
 
   // Allowlist
@@ -104,4 +109,14 @@ const q = {
   deleteSession: db.prepare('DELETE FROM sessions WHERE id = ?'),
 };
 
-module.exports = { q, generateCode, now, uuid };
+function findLogEntriesByUserIds(userIds) {
+  if (!userIds || userIds.length === 0) return [];
+  const placeholders = userIds.map(() => '?').join(',');
+  // Must create a new prepared statement each time since the number of ? varies
+  return db.prepare(`SELECT le.*, u.name as user_name
+    FROM log_entries le INNER JOIN users u ON u.id = le.user_id
+    WHERE le.user_id IN (${placeholders})
+    ORDER BY le.created_at DESC`).all(...userIds);
+}
+
+module.exports = { q, findLogEntriesByUserIds, generateCode, now, uuid };

@@ -32,6 +32,7 @@
         </div>
         <div class="top-bar-left">
           <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
+          <button class="btn btn-secondary btn-sm" id="open-log-viewer-btn" style="display:none" data-i18n="dashboard.logViewer">Log Viewer</button>
           <button class="btn btn-secondary btn-sm" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
         </div>
       </div>
@@ -239,7 +240,7 @@
       <form id="log-entry-form" style="max-width:600px">
         <div class="form-group">
           <label data-i18n="logEntry.handler">Handler</label>
-          <input type="text" id="le-handler-name" readonly style="background:#f5f5f5;cursor:default" />
+          <input type="text" id="le-handler-name" readonly />
         </div>
         <div class="form-group">
           <label data-i18n="logEntry.dog">Dog</label>
@@ -318,11 +319,22 @@
       <div id="log-detail-content"></div>
     </div>
 
+    <!-- LOG VIEWER (admin only) -->
+    <div id="log-viewer-page" class="page">
+      <div class="top-bar">
+        <h1 data-i18n="log.viewerTitle">Log Viewer</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-viewer-btn" data-i18n="log.back">Back</button>
+      </div>
+      <div id="viewer-filter-bar" style="margin:8px 0;display:none"></div>
+      <div id="log-viewer-entries" style="margin-top:12px"></div>
+    </div>
+
   </div>
 
   <script src="api.js"></script>
   <script src="i18n.js"></script>
   <script src="ws.js"></script>
+  <script src="user-selector.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

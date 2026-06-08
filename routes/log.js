@@ -1,11 +1,20 @@
 const { Router } = require('express');
-const { q, uuid } = require('../db/queries');
+const { q, findLogEntriesByUserIds, uuid } = require('../db/queries');
 const { authenticateToken } = require('../middleware/auth');
+const { canInvite } = require('./auth');
 
 const router = Router();
 router.use(authenticateToken);
 
 router.get('/', (req, res) => {
+  const { userIds } = req.query;
+  if (userIds) {
+    if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
+    const ids = userIds.split(',').filter(Boolean);
+    if (ids.length === 0) return res.json({ entries: [] });
+    const entries = findLogEntriesByUserIds(ids);
+    return res.json({ entries });
+  }
   const entries = q.findLogEntries.all(req.user.userId);
   res.json({ entries });
 });
@@ -45,7 +54,9 @@ router.post('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const entry = q.findLogEntryById.get(req.params.id);
   if (!entry) return res.status(404).json({ error: 'Log entry not found' });
-  if (entry.user_id !== req.user.userId) return res.status(403).json({ error: 'Not your entry' });
+  if (entry.user_id !== req.user.userId && !canInvite(req.user.userId)) {
+    return res.status(403).json({ error: 'Not your entry' });
+  }
   res.json({ entry });
 });
 

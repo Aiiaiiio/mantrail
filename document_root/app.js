@@ -222,6 +222,9 @@ const App = {
       case 'log':
         this.renderLog();
         break;
+      case 'log-viewer':
+        this.renderLogViewer();
+        break;
       case 'log-entry':
         this.renderLogEntry(params || {});
         break;
@@ -370,6 +373,14 @@ const App = {
     document.getElementById('open-log-btn').onclick = () => {
       this.nav('log');
     };
+
+    const logViewerBtn = document.getElementById('open-log-viewer-btn');
+    if (this.currentUser?.can_invite) {
+      logViewerBtn.style.display = '';
+      logViewerBtn.onclick = () => this.nav('log-viewer');
+    } else {
+      logViewerBtn.style.display = 'none';
+    }
 
     const manageBtn = document.getElementById('manage-access-btn');
     if (this.currentUser?.can_invite) {
@@ -1426,10 +1437,9 @@ const App = {
     }
   },
 
-  // ========== LOG LIST ==========
+  // ========== LOG LIST (My Log) ==========
   async renderLog() {
     document.getElementById('back-from-log-btn').onclick = () => this.nav('dashboard');
-
     document.getElementById('new-log-entry-btn').onclick = () => {
       this.nav('log-entry', { prefill: null });
     };
@@ -1439,43 +1449,152 @@ const App = {
 
     try {
       const res = await API.getLogEntries();
-      const entries = res.entries;
-
-      if (entries.length === 0) {
-        list.innerHTML = `<div class="empty-state">${I18n.t('log.noEntries')}</div>`;
-        return;
-      }
-
-      list.innerHTML = entries.map(e => {
-        const difficulties = JSON.parse(e.difficulties || '[]');
-        const feelings = JSON.parse(e.handler_feelings || '[]');
-        const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
-        return `
-          <div class="card log-entry-card" onclick="App.nav('log-detail', {id:'${e.id}'})" style="cursor:pointer">
-            <div class="log-entry-header">
-              <strong>${e.handler_name}</strong> &middot; ${e.dog_name}
-              <span class="meta">${date}</span>
-            </div>
-            <div class="meta">
-              ${e.place_name ? e.place_name + ' &middot; ' : ''}
-              ${e.path_type ? e.path_type.replace(/_/g, ' ') + ' &middot; ' : ''}
-              ${e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' ' + I18n.t('summary.min') : ''}
-              ${e.path_length_meters ? ' &middot; ' + e.path_length_meters + ' m' : ''}
-            </div>
-            <div class="meta">
-              ${difficulties.length ? I18n.t('logDetail.difficulties') + ': ' + difficulties.join(', ') : ''}
-              ${feelings.length ? I18n.t('logDetail.feelings') + ': ' + feelings.join(', ') : ''}
-            </div>
-            <div style="margin-top:8px">
-              <button class="btn btn-sm" onclick="event.stopPropagation();App.editLogEntry('${e.id}')">${I18n.t('log.edit')}</button>
-              <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteLogEntry('${e.id}')">${I18n.t('log.delete')}</button>
-            </div>
-          </div>
-        `;
-      }).join('');
+      this._renderLogEntries(res.entries, 'log-entries-list', false);
     } catch (e) {
       list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
+  },
+
+  _renderLogEntries(entries, containerId, showOwner) {
+    const list = document.getElementById(containerId);
+    if (!list) return;
+    if (entries.length === 0) {
+      list.innerHTML = `<div class="empty-state">${I18n.t('log.noEntries')}</div>`;
+      return;
+    }
+
+    const navTarget = containerId === 'log-viewer-entries' ? 'log-viewer' : 'log';
+
+    list.innerHTML = entries.map(e => {
+      const difficulties = JSON.parse(e.difficulties || '[]');
+      const feelings = JSON.parse(e.handler_feelings || '[]');
+      const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
+      const isOwner = e.user_id === this.currentUser.id;
+      const userNameHtml = (showOwner && !isOwner) ? `<span style="font-size:12px;color:var(--text-muted)"> &middot; ${e.user_name || '?'}</span>` : '';
+      const actionBtns = isOwner ? `
+        <div style="margin-top:8px">
+          <button class="btn btn-sm" onclick="event.stopPropagation();App.editLogEntry('${e.id}')">${I18n.t('log.edit')}</button>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteLogEntry('${e.id}')">${I18n.t('log.delete')}</button>
+        </div>
+      ` : '';
+      return `
+        <div class="card log-entry-card" onclick="App.nav('log-detail', {id:'${e.id}', from:'${navTarget}'})" style="cursor:pointer">
+          <div class="log-entry-header">
+            <strong>${e.handler_name}</strong> &middot; ${e.dog_name}${userNameHtml}
+            <span class="meta">${date}</span>
+          </div>
+          <div class="meta">
+            ${e.place_name ? e.place_name + ' &middot; ' : ''}
+            ${e.path_type ? e.path_type.replace(/_/g, ' ') + ' &middot; ' : ''}
+            ${e.search_duration_seconds ? Math.round(e.search_duration_seconds / 60) + ' ' + I18n.t('summary.min') : ''}
+            ${e.path_length_meters ? ' &middot; ' + e.path_length_meters + ' m' : ''}
+          </div>
+          <div class="meta">
+            ${difficulties.length ? I18n.t('logDetail.difficulties') + ': ' + difficulties.join(', ') : ''}
+            ${feelings.length ? I18n.t('logDetail.feelings') + ': ' + feelings.join(', ') : ''}
+          </div>
+          ${actionBtns}
+        </div>
+      `;
+    }).join('');
+  },
+
+  // ========== LOG VIEWER (admin only) ==========
+  async renderLogViewer() {
+    document.getElementById('back-from-viewer-btn').onclick = () => this.nav('dashboard');
+
+    const filterBar = document.getElementById('viewer-filter-bar');
+    filterBar.style.display = '';
+    filterBar.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-secondary" id="viewer-filter-btn">${I18n.t('log.filterByUser')}</button>
+        <div id="viewer-filter-chips" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
+      </div>
+    `;
+
+    document.getElementById('viewer-filter-btn').onclick = async () => {
+      try {
+        const res = await API.getUsers();
+        this.viewerFilterUsers = res.users;
+        const selector = new UserSelector({
+          multiSelect: true,
+          labels: {
+            title: I18n.t('userSelector.title'),
+            search: I18n.t('userSelector.search'),
+            selectedCount: (n) => I18n.t('userSelector.selected', { n }),
+            apply: I18n.t('userSelector.apply'),
+            noResults: I18n.t('userSelector.noResults'),
+          },
+          onApply: (ids) => this._applyViewerFilter(ids),
+        });
+        selector.open(res.users);
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+    };
+
+    this._updateViewerFilterChips();
+    await this._fetchAndRenderViewer();
+  },
+
+  async _fetchAndRenderViewer() {
+    const list = document.getElementById('log-viewer-entries');
+    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
+    try {
+      const res = await API.getLogEntries(this.viewerFilterUserIds);
+      this._renderLogEntries(res.entries, 'log-viewer-entries', true);
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
+    }
+  },
+
+  async _applyViewerFilter(userIds) {
+    this.viewerFilterUserIds = userIds;
+    this.viewerFilterUserNames = userIds.map(id => {
+      const u = this.viewerFilterUsers ? this.viewerFilterUsers.find(u => u.id === id) : null;
+      return u ? u.name : id;
+    });
+    this._updateViewerFilterChips();
+    await this._fetchAndRenderViewer();
+  },
+
+  _clearViewerFilter() {
+    this.viewerFilterUserIds = null;
+    this.viewerFilterUserNames = null;
+    this.viewerFilterUsers = null;
+    this.renderLogViewer();
+  },
+
+  _updateViewerFilterChips() {
+    const container = document.getElementById('viewer-filter-chips');
+    if (!container) return;
+    if (!this.viewerFilterUserIds || this.viewerFilterUserIds.length === 0 || !this.viewerFilterUserNames) {
+      container.innerHTML = '';
+      return;
+    }
+    const chips = this.viewerFilterUserIds.map((id, i) => {
+      return `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--badge-bg);border-radius:12px;font-size:12px">
+        ${this.viewerFilterUserNames[i]}
+        <span style="cursor:pointer;font-size:14px;line-height:1" data-id="${id}" class="filter-chip-remove">&times;</span>
+      </span>`;
+    }).join('');
+    const clearBtn = `<button class="btn btn-sm btn-secondary" id="viewer-filter-clear-btn" style="font-size:12px">${I18n.t('log.clearFilter')}</button>`;
+    container.innerHTML = chips + clearBtn;
+
+    container.querySelectorAll('.filter-chip-remove').forEach(el => {
+      el.onclick = () => {
+        const id = el.dataset.id;
+        const remaining = this.viewerFilterUserIds.filter(uid => uid !== id);
+        if (remaining.length === 0) {
+          this._clearViewerFilter();
+        } else {
+          this._applyViewerFilter(remaining);
+        }
+      };
+    });
+
+    const clearBtnEl = document.getElementById('viewer-filter-clear-btn');
+    if (clearBtnEl) clearBtnEl.onclick = () => this._clearViewerFilter();
   },
 
   async editLogEntry(id) {
@@ -1506,7 +1625,8 @@ const App = {
     const container = document.getElementById('log-detail-content');
     container.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
-    document.getElementById('back-from-detail-btn').onclick = () => this.nav('log');
+    const returnTo = this.currentPageParams?.from || 'log';
+    document.getElementById('back-from-detail-btn').onclick = () => this.nav(returnTo);
 
     try {
       const res = await API.getLogEntry(id);
@@ -1516,17 +1636,24 @@ const App = {
       const feelings = JSON.parse(e.handler_feelings || '[]');
       const date = e.search_date ? new Date(e.search_date + 'T' + (e.search_time || '00:00')).toLocaleString() : 'N/A';
 
+      const isOwner = e.user_id === this.currentUser.id;
+      const userNameHtml = !isOwner ? `<p style="font-size:13px;color:var(--text-muted)">${I18n.t('logDetail.owner')}: ${e.user_name || '?'}</p>` : '';
+      const actionBtns = isOwner ? `
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="App.editLogEntryFromDetail('${e.id}')">${I18n.t('log.edit')}</button>
+          <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntryFromDetail('${e.id}')">${I18n.t('log.delete')}</button>
+        </div>
+      ` : '';
+
       let html = `
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap">
             <div>
               <h3>${e.handler_name} &middot; ${e.dog_name}</h3>
               <p style="font-size:13px;color:#888">${date}</p>
+              ${userNameHtml}
             </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-sm" onclick="App.editLogEntryFromDetail('${e.id}')">${I18n.t('log.edit')}</button>
-              <button class="btn btn-sm btn-danger" onclick="App.deleteLogEntryFromDetail('${e.id}')">${I18n.t('log.delete')}</button>
-            </div>
+            ${actionBtns}
           </div>
           <hr style="margin:12px 0" />
           <table class="detail-table">
@@ -1578,7 +1705,7 @@ const App = {
   async editLogEntryFromDetail(id) {
     try {
       const res = await API.getLogEntry(id);
-      this.nav('log-entry', { entryId: id, prefill: res.entry });
+      this.nav('log-entry', { entryId: id, prefill: res.entry, from: this.currentPageParams?.from });
     } catch (e) {
       this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
@@ -1589,7 +1716,7 @@ const App = {
     try {
       await API.deleteLogEntry(id);
       this.showSnackbar(I18n.t('log.entryDeleted'));
-      this.nav('log');
+      this.nav(this.currentPageParams?.from || 'log');
     } catch (e) {
       this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }

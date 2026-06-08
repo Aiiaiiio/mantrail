@@ -16,6 +16,7 @@
     "newSession": "+ Új munkamenet",
     "joinWithCode": "Csatlakozás kóddal",
     "myLog": "Naplóm",
+    "logViewer": "Napló megtekintő",
     "sessionName": "Munkamenet neve:",
     "enterCode": "Add meg a kódot (pl. MT-XXXXXX):",
     "noSessions": "Még nincsenek munkamenetek. Hozz létre egyet, vagy csatlakozz egy kóddal!",
@@ -113,7 +114,10 @@
     "delete": "Törlés",
     "deleteConfirm": "Törlöd ezt a naplóbejegyzést?",
     "entryDeleted": "Bejegyzés törölve!",
-    "back": "Vissza"
+    "back": "Vissza",
+    "filterByUser": "Szűrés felhasználóra",
+    "clearFilter": "Szűrő törlése",
+    "viewerTitle": "Napló megtekintő"
   },
   "logEntry": {
     "newTitle": "Új naplóbejegyzés",
@@ -156,7 +160,8 @@
     "weather": "Időjárás",
     "difficulties": "Nehézségek",
     "feelings": "Érzések",
-    "notes": "Megjegyzések"
+    "notes": "Megjegyzések",
+    "owner": "Tulajdonos"
   },
   "weather": {
     "0": "Derült ég",
@@ -238,6 +243,13 @@
     "hu": "Magyar",
     "en": "English",
     "label": "Nyelv"
+  },
+  "userSelector": {
+    "title": "Felhasználók kiválasztása",
+    "search": "Keresés...",
+    "selected": "{n} kiválasztva",
+    "apply": "Alkalmaz",
+    "noResults": "Nincs találat"
   },
   "settings": {
     "title": "Beállítások",
