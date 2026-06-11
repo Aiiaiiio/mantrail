@@ -594,10 +594,19 @@ const App = {
   async toggleAllowedPermission(id, canInvite) {
     try {
       await API.toggleAllowlistPermission(id, canInvite);
+      // Refresh current user in case we changed our own rights
+      const me = await API.getMe();
+      this.currentUser = me.user;
+
       const res = await API.getAllowlist();
       this.renderAllowlist(res.entries);
     } catch (e) {
-      this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      if (e.message === 'Not authorized') {
+        // User likely lost admin rights — redirect to dashboard
+        this.nav('dashboard');
+      } else {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
     }
   },
 
