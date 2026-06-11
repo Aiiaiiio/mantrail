@@ -14,6 +14,18 @@
 
     <div id="snackbar"></div>
 
+    <!-- GLOBAL HEADER -->
+    <div id="app-header" style="display:none">
+      <span id="header-user-name"></span>
+      <span id="header-version-tag"></span>
+      <span class="inbox-btn-wrap" style="margin-left:auto">
+        <button class="btn-icon" id="inbox-btn">&#128276;</button>
+        <span id="inbox-unread-dot" class="unread-dot" style="display:none"></span>
+      </span>
+      <button class="btn-icon" id="settings-btn" title="Settings">&#9881;</button>
+      <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
+    </div>
+
     <!-- LOGIN -->
     <div id="login-page" class="page active" data-client-id="">
       <h1 data-i18n="app.title">Mantrail Tracker</h1>
@@ -24,16 +36,6 @@
     <!-- DASHBOARD -->
     <div id="dashboard-page" class="page">
       <div class="top-bar">
-        <div class="top-bar-right">
-          <span id="user-name"></span>
-          <span id="version-tag" style="font-size:11px;color:#999;margin:0 8px"></span>
-          <span class="inbox-btn-wrap">
-            <button class="btn-icon" id="inbox-btn">&#128276;</button>
-            <span id="inbox-unread-dot" class="unread-dot" style="display:none"></span>
-          </span>
-          <button class="btn-icon" id="settings-btn" title="Settings">&#9881;</button>
-          <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
-        </div>
         <div class="top-bar-left">
           <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
           <button class="btn btn-secondary btn-sm" id="open-log-viewer-btn" style="display:none" data-i18n="dashboard.logViewer">Log Viewer</button>
