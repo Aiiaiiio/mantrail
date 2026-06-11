@@ -102,7 +102,14 @@
 
       <div class="card" style="margin-bottom:16px">
         <h2 data-i18n="settings.language">Language</h2>
-        <select id="settings-language-select" class="lang-select">
+        <div class="custom-dropdown" id="custom-lang-dropdown">
+          <button class="custom-dropdown-trigger" type="button" data-i18n="settings.language">Language</button>
+          <div class="custom-dropdown-panel">
+            <div class="custom-dropdown-option" data-value="hu">&#127469;&#127482; Magyar</div>
+            <div class="custom-dropdown-option" data-value="en">&#127468;&#127463; English</div>
+          </div>
+        </div>
+        <select id="settings-language-select" style="display:none">
           <option value="hu">&#127469;&#127482; Magyar</option>
           <option value="en">&#127468;&#127463; English</option>
         </select>
@@ -110,10 +117,18 @@
 
       <div class="card" style="margin-bottom:16px">
         <h2 data-i18n="settings.theme">Theme</h2>
-        <select id="settings-theme-select">
-          <option value="system" data-i18n="settings.system">System</option>
-          <option value="light" data-i18n="settings.light">Light</option>
-          <option value="dark" data-i18n="settings.dark">Dark</option>
+        <div class="custom-dropdown" id="custom-theme-dropdown">
+          <button class="custom-dropdown-trigger" type="button" data-i18n="settings.theme">Theme</button>
+          <div class="custom-dropdown-panel">
+            <div class="custom-dropdown-option" data-value="system">System</div>
+            <div class="custom-dropdown-option" data-value="light">Light</div>
+            <div class="custom-dropdown-option" data-value="dark">Dark</div>
+          </div>
+        </div>
+        <select id="settings-theme-select" style="display:none">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
         </select>
       </div>
 

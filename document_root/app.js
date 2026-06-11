@@ -193,6 +193,8 @@ const App = {
       if (sel) sel.value = I18n.locale;
       const themeSel = document.getElementById('settings-theme-select');
       if (themeSel) themeSel.value = this.theme;
+      // Sync custom dropdown triggers after value changes
+      this._initCustomDropdowns();
       const card = document.getElementById('settings-access-card');
       if (card) card.style.display = this.currentUser?.can_invite ? '' : 'none';
     } else if (page === 'notifications') {
@@ -510,6 +512,56 @@ const App = {
     };
 
     document.getElementById('back-from-settings-btn').onclick = () => this.nav('dashboard');
+
+    this._initCustomDropdowns();
+  },
+
+  _initCustomDropdowns() {
+    ['custom-lang-dropdown', 'custom-theme-dropdown'].forEach(id => {
+      const container = document.getElementById(id);
+      if (!container) return;
+      const trigger = container.querySelector('.custom-dropdown-trigger');
+      const panel = container.querySelector('.custom-dropdown-panel');
+      const options = panel.querySelectorAll('.custom-dropdown-option');
+      const selectId = container.nextElementSibling?.id;
+      const select = selectId ? document.getElementById(selectId) : null;
+      if (!select) return;
+
+      const syncTrigger = () => {
+        const opt = Array.from(options).find(o => o.dataset.value === select.value);
+        if (opt) trigger.childNodes[0].textContent = opt.textContent;
+      };
+
+      const closePanel = () => {
+        panel.classList.remove('open');
+        const bd = document.querySelector('.custom-dropdown-backdrop');
+        if (bd) bd.remove();
+      };
+
+      trigger.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = panel.classList.contains('open');
+        closePanel();
+        if (!isOpen) {
+          panel.classList.add('open');
+          const bd = document.createElement('div');
+          bd.className = 'custom-dropdown-backdrop';
+          bd.onclick = closePanel;
+          document.body.appendChild(bd);
+        }
+      };
+
+      options.forEach(opt => {
+        opt.onclick = () => {
+          select.value = opt.dataset.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          syncTrigger();
+          closePanel();
+        };
+      });
+
+      syncTrigger();
+    });
   },
 
   // ========== ACCESS MANAGEMENT ==========
