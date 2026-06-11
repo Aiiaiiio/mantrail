@@ -65,6 +65,7 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
   background: var(--primary); color: #fff; transition: opacity 0.2s;
 }
 .btn:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); }
 .btn-danger { background: var(--danger); }
 .btn-success { background: var(--success); }

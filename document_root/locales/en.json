@@ -239,7 +239,9 @@
     "inviteCopied": "Invite link copied to clipboard!",
     "noInvites": "No invite links generated yet.",
     "usedBy": "Used by",
-    "unused": "Unused"
+    "unused": "Unused",
+    "cannotSelfRevoke": "Cannot revoke your own admin rights",
+    "cannotLastAdmin": "Cannot revoke the last admin"
   },
   "language": {
     "hu": "Magyar",

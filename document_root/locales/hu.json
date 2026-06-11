@@ -239,7 +239,9 @@
     "inviteCopied": "Meghívó link a vágólapra másolva!",
     "noInvites": "Még nincsenek meghívó linkek.",
     "usedBy": "Használta",
-    "unused": "Felhasználatlan"
+    "unused": "Felhasználatlan",
+    "cannotSelfRevoke": "Nem vonhatod vissza saját admin jogaidat",
+    "cannotLastAdmin": "Nem vonható vissza az utolsó admin"
   },
   "language": {
     "hu": "Magyar",

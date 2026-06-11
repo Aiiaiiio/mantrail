@@ -559,18 +559,36 @@ const App = {
 
   renderAllowlist(entries) {
     const container = document.getElementById('allowlist-entries');
-    container.innerHTML = entries.map(e => `
+    const userEmail = this.currentUser?.email || '';
+    const adminCount = entries.filter(e => e.can_invite).length;
+
+    container.innerHTML = entries.map(e => {
+      let revokeDisabled = false;
+      let revokeTitle = '';
+      if (e.can_invite) {
+        if (e.email === userEmail) {
+          revokeDisabled = true;
+          revokeTitle = I18n.t('access.cannotSelfRevoke');
+        } else if (adminCount <= 1) {
+          revokeDisabled = true;
+          revokeTitle = I18n.t('access.cannotLastAdmin');
+        }
+      }
+
+      const revokeBtn = e.can_invite
+        ? `<button class="btn btn-sm btn-danger" ${revokeDisabled ? 'disabled title="' + revokeTitle + '"' : ''} onclick="App.toggleAllowedPermission('${e.id}', 0)">${I18n.t('access.revokeAdmin')}</button>`
+        : `<button class="btn btn-sm btn" onclick="App.toggleAllowedPermission('${e.id}', 1)">${I18n.t('access.grantAdmin')}</button>`;
+
+      return `
       <div class="dog-item">
         <span>${e.email}</span>
         <span style="font-size:12px;color:${e.can_invite ? '#43a047' : '#999'};margin-left:8px">
           ${e.can_invite ? I18n.t('access.granted') : I18n.t('access.restricted')}
         </span>
-        <button class="btn btn-sm ${e.can_invite ? 'btn-danger' : 'btn'}" onclick="App.toggleAllowedPermission('${e.id}', ${e.can_invite ? 0 : 1})">
-          ${e.can_invite ? I18n.t('access.revokeAdmin') : I18n.t('access.grantAdmin')}
-        </button>
+        ${revokeBtn}
         <button class="btn btn-sm btn-danger" onclick="App.removeAllowedEmail('${e.id}')">${I18n.t('dashboard.remove')}</button>
       </div>
-    `).join('');
+    `}).join('');
   },
 
   async toggleAllowedPermission(id, canInvite) {
