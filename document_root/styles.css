@@ -187,11 +187,14 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .lang-select {
   font-size: 18px; padding: 2px 4px; border: 1px solid var(--border);
   border-radius: 6px; background: var(--input-bg); color: var(--text); cursor: pointer;
-  line-height: 1; appearance: auto; -webkit-appearance: auto;
+  line-height: 1;
 }
 select {
   border: 1px solid var(--border); border-radius: 8px; padding: 8px;
   background: var(--input-bg); color: var(--text); font-size: 14px;
+}
+select option {
+  background: var(--input-bg); color: var(--text);
 }
 
 .btn-icon {
