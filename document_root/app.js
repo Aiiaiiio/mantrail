@@ -195,6 +195,8 @@ const App = {
       if (themeSel) themeSel.value = this.theme;
       const card = document.getElementById('settings-access-card');
       if (card) card.style.display = this.currentUser?.can_invite ? '' : 'none';
+    } else if (page === 'notifications') {
+      this._updateInboxBadge();
     }
   },
 
@@ -238,6 +240,9 @@ const App = {
         break;
       case 'settings':
         this.renderSettingsPage();
+        break;
+      case 'notifications':
+        this.renderNotificationsPage();
         break;
     }
   },
@@ -392,6 +397,9 @@ const App = {
 
     document.getElementById('settings-btn').onclick = () => this.nav('settings');
     document.getElementById('logout-btn').onclick = () => this.logout();
+
+    document.getElementById('inbox-btn').onclick = () => this.nav('notifications');
+    this._updateInboxBadge();
 
     document.getElementById('add-dog-btn').onclick = async () => {
       const input = document.getElementById('new-dog-name');
@@ -1595,6 +1603,132 @@ const App = {
 
     const clearBtnEl = document.getElementById('viewer-filter-clear-btn');
     if (clearBtnEl) clearBtnEl.onclick = () => this._clearViewerFilter();
+  },
+
+  // ========== NOTIFICATIONS ==========
+  async _updateInboxBadge() {
+    if (!this.currentUser) return;
+    const dot = document.getElementById('inbox-unread-dot');
+    if (!dot) return;
+    try {
+      const res = await API.getUnreadNotificationCount();
+      dot.style.display = res.count > 0 ? '' : 'none';
+    } catch {
+      dot.style.display = 'none';
+    }
+  },
+
+  async renderNotificationsPage() {
+    document.getElementById('back-from-notifications-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('mark-all-notifications-read-btn').onclick = async () => {
+      try {
+        await API.markAllNotificationsRead();
+        this._updateInboxBadge();
+        this.renderNotificationsPage();
+      } catch (e) {
+        this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+      }
+    };
+
+    // Broadcast form for admins
+    const broadcastEl = document.getElementById('broadcast-section');
+    if (broadcastEl) broadcastEl.remove();
+
+    if (this.currentUser?.can_invite) {
+      const header = document.getElementById('back-from-notifications-btn').parentElement;
+      header.insertAdjacentHTML('afterend', `
+        <div id="broadcast-section" class="card" style="margin-bottom:12px">
+          <h3 data-i18n="notifications.broadcast">Broadcast Message</h3>
+          <div class="form-group">
+            <input type="text" id="broadcast-title" data-i18n="notifications.broadcastTitle" placeholder="Title" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--input-bg);color:var(--text)" />
+          </div>
+          <div class="form-group">
+            <textarea id="broadcast-body" rows="3" data-i18n="notifications.broadcastBody" placeholder="Message" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--input-bg);color:var(--text)"></textarea>
+          </div>
+          <button class="btn btn-sm" id="broadcast-send-btn" data-i18n="notifications.send">Send to all users</button>
+        </div>
+      `);
+      document.getElementById('broadcast-send-btn').onclick = async () => {
+        const title = document.getElementById('broadcast-title').value.trim();
+        const body = document.getElementById('broadcast-body').value.trim();
+        if (!title || !body) { this.showSnackbar('Title and message required'); return; }
+        try {
+          await API.broadcastNotification(title, body);
+          this.showSnackbar(I18n.t('notifications.sent'));
+          document.getElementById('broadcast-title').value = '';
+          document.getElementById('broadcast-body').value = '';
+          this.renderNotificationsPage();
+        } catch (e) {
+          this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
+        }
+      };
+    }
+
+    const list = document.getElementById('notifications-list');
+    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
+
+    try {
+      const res = await API.getNotifications();
+      const notifications = res.notifications;
+      if (notifications.length === 0) {
+        list.innerHTML = `<div class="empty-state">${I18n.t('notifications.noNotifications')}</div>`;
+        return;
+      }
+
+      const typeIcons = { info: '&#8505;', invite_used: '&#128279;', warning: '&#9888;' };
+
+      list.innerHTML = notifications.map(n => {
+        const icon = typeIcons[n.type] || '&#8505;';
+        const timeAgo = this._timeAgo(n.created_at);
+        const unreadClass = n.is_read ? '' : 'notification-unread';
+        return `
+          <div class="notification-item ${unreadClass}" data-id="${n.id}" data-link="${n.link || ''}" style="cursor:${n.link ? 'pointer' : 'default'}">
+            <div class="notification-type-icon">${icon}</div>
+            <div class="notification-body">
+              <div class="notification-title">${n.title}</div>
+              <div class="notification-text">${n.body}</div>
+              <div class="notification-time">${timeAgo}</div>
+            </div>
+            ${n.is_read ? '' : '<div class="notification-unread-dot"></div>'}
+          </div>
+        `;
+      }).join('');
+
+      list.querySelectorAll('.notification-item').forEach(el => {
+        el.addEventListener('click', async () => {
+          const id = el.dataset.id;
+          const link = el.dataset.link;
+          if (!el.classList.contains('notification-unread')) {
+            if (link) this.nav('dashboard');
+            return;
+          }
+          try {
+            await API.markNotificationRead(id);
+            this._updateInboxBadge();
+            el.classList.remove('notification-unread');
+            const dot = el.querySelector('.notification-unread-dot');
+            if (dot) dot.remove();
+          } catch {}
+          if (link) {
+            const target = link.replace(/^\//, '');
+            if (target === 'access-management') this.nav('access-management');
+            else this.nav('dashboard');
+          }
+        });
+      });
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
+    }
+  },
+
+  _timeAgo(iso) {
+    const now = Date.now();
+    const then = new Date(iso + 'Z').getTime();
+    const diff = Math.floor((now - then) / 1000);
+    if (diff < 60) return I18n.t('notifications.justNow');
+    if (diff < 3600) return Math.floor(diff / 60) + ' ' + I18n.t('notifications.minAgo');
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ' + I18n.t('notifications.hourAgo');
+    return Math.floor(diff / 86400) + ' ' + I18n.t('notifications.dayAgo');
   },
 
   async editLogEntry(id) {

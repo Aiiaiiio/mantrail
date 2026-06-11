@@ -58,6 +58,29 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 7,
+    desc: 'Add notifications table',
+    up: () => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          type TEXT NOT NULL DEFAULT 'info',
+          link TEXT,
+          is_read INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+      `);
+      const table = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'").get();
+      if (table) {
+        const idx = db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='idx_notifications_user'").get();
+        if (!idx) db.exec("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, created_at)");
+      }
+    },
+  },
 ];
 
 for (const m of MIGRATIONS) {

@@ -107,6 +107,15 @@ const q = {
   deleteSearchSessions: db.prepare('DELETE FROM search_sessions WHERE session_id = ?'),
   deleteAssignedRoutes: db.prepare('DELETE FROM assigned_routes WHERE session_id = ?'),
   deleteSession: db.prepare('DELETE FROM sessions WHERE id = ?'),
+
+  // Notifications
+  insertNotification: db.prepare('INSERT INTO notifications (id, user_id, title, body, type, link) VALUES (?, ?, ?, ?, ?, ?)'),
+  findNotifications: db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50'),
+  countUnreadNotifications: db.prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0'),
+  markNotificationRead: db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?'),
+  markAllNotificationsRead: db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?'),
+  findAdminUserIds: db.prepare(`SELECT u.id FROM users u INNER JOIN allowed_emails ae ON ae.email = u.email WHERE ae.can_invite = 1`),
+  findAllUserIds: db.prepare('SELECT id FROM users'),
 };
 
 function findLogEntriesByUserIds(userIds) {

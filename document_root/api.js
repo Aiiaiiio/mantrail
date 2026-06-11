@@ -112,4 +112,11 @@ const API = {
   createLogEntry(data) { return this.post('/api/log', data); },
   updateLogEntry(id, data) { return this.put(`/api/log/${id}`, data); },
   deleteLogEntry(id) { return this.del(`/api/log/${id}`); },
+
+  // Notifications
+  getNotifications() { return this.get('/api/notifications'); },
+  getUnreadNotificationCount() { return this.get('/api/notifications/unread-count'); },
+  markNotificationRead(id) { return this.put(`/api/notifications/${id}/read`); },
+  markAllNotificationsRead() { return this.put('/api/notifications/read-all'); },
+  broadcastNotification(title, body) { return this.post('/api/notifications/broadcast', { title, body }); },
 };

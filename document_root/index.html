@@ -27,6 +27,10 @@
         <div class="top-bar-right">
           <span id="user-name"></span>
           <span id="version-tag" style="font-size:11px;color:#999;margin:0 8px"></span>
+          <span class="inbox-btn-wrap">
+            <button class="btn-icon" id="inbox-btn">&#128276;</button>
+            <span id="inbox-unread-dot" class="unread-dot" style="display:none"></span>
+          </span>
           <button class="btn-icon" id="settings-btn" title="Settings">&#9881;</button>
           <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
         </div>
@@ -317,6 +321,18 @@
         <button class="btn btn-sm btn-secondary" id="back-from-detail-btn" data-i18n="log.back">Back</button>
       </div>
       <div id="log-detail-content"></div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="notifications-page" class="page">
+      <div class="top-bar">
+        <h1 data-i18n="notifications.title">Notifications</h1>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-secondary" id="mark-all-notifications-read-btn" data-i18n="notifications.markAllRead">Mark all read</button>
+          <button class="btn btn-sm btn-secondary" id="back-from-notifications-btn" data-i18n="notifications.back">Back</button>
+        </div>
+      </div>
+      <div id="notifications-list"></div>
     </div>
 
     <!-- LOG VIEWER (admin only) -->

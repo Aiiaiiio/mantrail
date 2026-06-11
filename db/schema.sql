@@ -115,3 +115,15 @@ CREATE TABLE IF NOT EXISTS log_entries (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info',
+  link TEXT,
+  is_read INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read, created_at);

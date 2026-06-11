@@ -22,6 +22,7 @@ app.use('/api/sessions', require('./routes/routes'));
 app.use('/api/sessions', require('./routes/summary'));
 app.use('/api/dogs', require('./routes/dogs'));
 app.use('/api/log', require('./routes/log'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 app.use('/static/avatars', express.static(path.resolve(__dirname, 'data', 'avatars')));
 app.use('/static', express.static(path.resolve(__dirname, 'static')));

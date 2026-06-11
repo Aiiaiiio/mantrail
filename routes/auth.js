@@ -138,17 +138,29 @@ router.post('/google', async (req, res) => {
       db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(name, user.id);
     }
 
-    // Add to allowlist if first user or invited
+      // Add to allowlist if first user or invited
     if (!allowed && (emailCount === 0 || inviteToken)) {
       const isFirst = emailCount === 0;
       // First user gets invite rights; invited users get the token's setting
       const inviteCanInvite = isFirst ? 1 : (inviteToken ? (q.findInviteByToken.get(inviteToken)?.can_invite || 0) : 0);
       q.insertAllowedEmail.run(uuid(), email, user.id, inviteCanInvite);
-      // Delete invite token after use
+      // Delete invite token after use and notify admins
       if (inviteToken) {
         const tokenRec = q.findInviteByToken.get(inviteToken);
         if (tokenRec && !tokenRec.used_by) {
+          const createdBy = tokenRec.created_by;
           q.deleteInviteToken.run(tokenRec.id);
+          // Notify all admins that an invite link was used
+          const admins = q.findAdminUserIds.all();
+          for (const admin of admins) {
+            q.insertNotification.run(
+              uuid(), admin.id,
+              'Invite Used',
+              `${name} (${email}) joined via invite link`,
+              'invite_used',
+              '/access-management'
+            );
+          }
         }
       }
     }

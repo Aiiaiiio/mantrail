@@ -251,6 +251,22 @@
     "apply": "Alkalmaz",
     "noResults": "Nincs találat"
   },
+  "notifications": {
+    "title": "Értesítések",
+    "back": "Vissza",
+    "markAllRead": "Összes olvasottnak",
+    "noNotifications": "Még nincsenek értesítések.",
+    "justNow": "most",
+    "minAgo": "perce",
+    "hourAgo": "órája",
+    "dayAgo": "napja",
+    "inviteUsed": "Meghívó használva",
+    "broadcast": "Üzenet küldése",
+    "broadcastTitle": "Cím",
+    "broadcastBody": "Üzenet",
+    "send": "Küldés minden felhasználónak",
+    "sent": "Üzenet elküldve minden felhasználónak!"
+  },
   "settings": {
     "title": "Beállítások",
     "back": "Vissza",

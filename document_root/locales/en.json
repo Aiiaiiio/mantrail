@@ -251,6 +251,22 @@
     "apply": "Apply",
     "noResults": "No users found"
   },
+  "notifications": {
+    "title": "Notifications",
+    "back": "Back",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications yet.",
+    "justNow": "just now",
+    "minAgo": "min ago",
+    "hourAgo": "h ago",
+    "dayAgo": "d ago",
+    "inviteUsed": "Invite Used",
+    "broadcast": "Broadcast Message",
+    "broadcastTitle": "Title",
+    "broadcastBody": "Message",
+    "send": "Send to all users",
+    "sent": "Message sent to all users!"
+  },
   "settings": {
     "title": "Settings",
     "back": "Back",
