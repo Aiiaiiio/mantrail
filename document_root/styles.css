@@ -194,8 +194,8 @@ select {
   background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
 }
 .lang-select {
-  font-size: 18px; padding: 2px 24px 2px 4px; border: 1px solid var(--border);
-  border-radius: 6px; cursor: pointer; line-height: 1;
+  font-size: 14px; padding: 8px 28px 8px 8px; border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer;
   appearance: none; -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 4px center; background-size: 12px;
