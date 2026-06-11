@@ -565,8 +565,8 @@ const App = {
         <span style="font-size:12px;color:${e.can_invite ? '#43a047' : '#999'};margin-left:8px">
           ${e.can_invite ? I18n.t('access.granted') : I18n.t('access.restricted')}
         </span>
-        <button class="btn btn-sm ${e.can_invite ? 'btn-secondary' : 'btn'}" onclick="App.toggleAllowedPermission('${e.id}', ${e.can_invite ? 0 : 1})">
-          ${e.can_invite ? I18n.t('access.restricted') : I18n.t('access.granted')}
+        <button class="btn btn-sm ${e.can_invite ? 'btn-danger' : 'btn'}" onclick="App.toggleAllowedPermission('${e.id}', ${e.can_invite ? 0 : 1})">
+          ${e.can_invite ? I18n.t('access.revokeAdmin') : I18n.t('access.grantAdmin')}
         </button>
         <button class="btn btn-sm btn-danger" onclick="App.removeAllowedEmail('${e.id}')">${I18n.t('dashboard.remove')}</button>
       </div>

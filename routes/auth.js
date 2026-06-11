@@ -234,6 +234,25 @@ router.patch('/allowlist/:id', (req, res) => {
   if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
   const { can_invite } = req.body;
   if (can_invite === undefined) return res.status(400).json({ error: 'can_invite required' });
+
+  const entry = q.findAllowedEmailById.get(req.params.id);
+  if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+  const currentUser = q.findUserById.get(req.user.userId);
+
+  // Prevent revoking admin rights from yourself
+  if (entry.email === currentUser.email && can_invite === 0) {
+    return res.status(400).json({ error: 'Cannot revoke your own admin rights' });
+  }
+
+  // Prevent revoking the last admin
+  if (can_invite === 0) {
+    const { count } = q.countAdmins.get();
+    if (count <= 1) {
+      return res.status(400).json({ error: 'Cannot revoke the last admin' });
+    }
+  }
+
   q.updateAllowedEmailCanInvite.run(can_invite ? 1 : 0, req.params.id);
   res.json({ entry: q.findAllowedEmail.get(req.params.id) });
 });

@@ -85,12 +85,14 @@ const q = {
 
   // Allowlist
   findAllowedEmail: db.prepare('SELECT * FROM allowed_emails WHERE email = ?'),
+  findAllowedEmailById: db.prepare('SELECT * FROM allowed_emails WHERE id = ?'),
   findAllowedEmails: db.prepare(`SELECT ae.*, u.name as added_by_name
     FROM allowed_emails ae LEFT JOIN users u ON u.id = ae.added_by ORDER BY ae.created_at DESC`),
   insertAllowedEmail: db.prepare('INSERT INTO allowed_emails (id, email, added_by, can_invite) VALUES (?, ?, ?, ?)'),
   updateAllowedEmailCanInvite: db.prepare('UPDATE allowed_emails SET can_invite = ? WHERE id = ?'),
   deleteAllowedEmail: db.prepare('DELETE FROM allowed_emails WHERE id = ?'),
   countAllowedEmails: db.prepare('SELECT COUNT(*) as count FROM allowed_emails'),
+  countAdmins: db.prepare("SELECT COUNT(*) as count FROM allowed_emails WHERE can_invite = 1"),
 
   // Invite tokens
   findInviteByToken: db.prepare('SELECT * FROM invite_tokens WHERE token = ?'),

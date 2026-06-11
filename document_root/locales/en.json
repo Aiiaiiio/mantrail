@@ -227,6 +227,8 @@
     "invitePermission": "Invite permission",
     "granted": "Can invite",
     "restricted": "No invite rights",
+    "grantAdmin": "Grant admin rights",
+    "revokeAdmin": "Revoke admin rights",
     "inviteLinks": "Invite Links",
     "generateLink": "Generate Invite Link",
     "manageAccess": "Manage Access",

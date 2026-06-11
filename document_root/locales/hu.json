@@ -227,6 +227,8 @@
     "invitePermission": "Meghívási jog",
     "granted": "Meghívhat",
     "restricted": "Nincs joga meghívni",
+    "grantAdmin": "Admin jogok adása",
+    "revokeAdmin": "Admin jogok visszavonása",
     "inviteLinks": "Meghívó linkek",
     "generateLink": "Meghívó link létrehozása",
     "manageAccess": "Hozzáférés kezelése",
