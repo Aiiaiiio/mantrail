@@ -52,6 +52,13 @@ router.post('/:id/search-result', (req, res) => {
     q.updateSessionStatus.run('completed', session.id);
   }
 
+  // Reset all dog_handler and lost_person back to passive_member
+  const roleMembers = q.findRoleMembers.all(session.id);
+  for (const m of roleMembers) {
+    q.updateMemberRole.run('passive_member', session.id, m.user_id);
+    broadcastToSession(session.id, { type: 'role_changed', userId: m.user_id, role: 'passive_member' });
+  }
+
   broadcastToSession(session.id, { type: 'search_ended', userId: req.user.userId, result });
 
   res.json({ success: true, duration_seconds: durationSec, search: q.findSearchById.get(search.id) });

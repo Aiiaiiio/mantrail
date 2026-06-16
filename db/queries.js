@@ -36,6 +36,7 @@ const q = {
     WHERE sm.session_id = ?`),
   countMembersInRole: db.prepare('SELECT COUNT(*) as count FROM session_members WHERE session_id = ? AND role = ?'),
   updateMemberRole: db.prepare('UPDATE session_members SET role = ? WHERE session_id = ? AND user_id = ?'),
+  findRoleMembers: db.prepare("SELECT user_id, role FROM session_members WHERE session_id = ? AND role IN ('dog_handler', 'lost_person')"),
 
   insertHiding: db.prepare('INSERT INTO hiding_sessions (id, session_id, user_id, started_at, status) VALUES (?, ?, ?, ?, ?)'),
   findActiveHidingByUser: db.prepare('SELECT * FROM hiding_sessions WHERE user_id = ? AND session_id = ? AND status = ?'),
