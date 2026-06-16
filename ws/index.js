@@ -63,6 +63,19 @@ function setupWebSocket(server) {
             }
 
             ws.sessionId = session.id;
+
+            // Reset stale role if no active search
+            if (member.role !== 'passive_member') {
+              const activeSearch = q.findActiveSearchBySession.get(session.id);
+              if (!activeSearch) {
+                q.updateMemberRole.run('passive_member', session.id, ws.userId);
+                member.role = 'passive_member';
+                broadcastToSession(session.id, {
+                  type: 'role_changed', userId: ws.userId, role: 'passive_member',
+                });
+              }
+            }
+
             ws.role = member.role;
             addClient(ws, ws.userId, session.id, member.role);
 
