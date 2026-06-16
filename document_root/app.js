@@ -144,6 +144,8 @@ const App = {
         document.getElementById('login-page').dataset.clientId = config.googleClientId;
       }
       this.appVersion = config.version || '';
+      this.commitHash = config.commitHash || '';
+      this.branch = config.branch || '';
     } catch (e) {
       console.error('Failed to load config:', e);
     }
@@ -261,6 +263,15 @@ const App = {
       if (hn) hn.textContent = this.currentUser?.name || '';
       const vt = document.getElementById('header-version-tag');
       if (vt) vt.textContent = this.appVersion ? `v${this.appVersion}` : '';
+      const gi = document.getElementById('header-git-info');
+      if (gi) {
+        if (this.commitHash) {
+          const isMain = !this.branch || this.branch === 'main';
+          gi.textContent = isMain ? `(${this.commitHash})` : `(${this.commitHash} ${this.branch})`;
+        } else {
+          gi.textContent = '';
+        }
+      }
     }
   },
 

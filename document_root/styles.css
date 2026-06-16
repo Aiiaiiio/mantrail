@@ -98,6 +98,7 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 }
 #header-user-name { font-weight: 600; white-space: nowrap; }
 #header-version-tag { font-size: 11px; color: var(--text-muted); }
+.header-git-info { font-size: 11px; color: var(--text-muted); margin-left: 4px; }
 #app-header .inbox-btn-wrap { margin-left: auto; }
 
 /* Pages need top padding for fixed header (except login/denied/session) */
