@@ -1,4 +1,8 @@
 FROM node:20-alpine
+ARG COMMIT_HASH
+ARG BRANCH
+ENV COMMIT_HASH=$COMMIT_HASH
+ENV BRANCH=$BRANCH
 WORKDIR /app
 
 COPY package.json package-lock.json ./
