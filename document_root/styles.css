@@ -88,7 +88,22 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .row { display: flex; gap: 12px; flex-wrap: wrap; }
 .col { flex: 1; min-width: 200px; }
 
-#login-page { text-align: center; padding-top: 120px; max-width: 400px; }
+/* ===== GLOBAL HEADER ===== */
+#app-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; height: 48px;
+  background: var(--card-bg); border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+#header-user-name { font-weight: 600; white-space: nowrap; }
+#header-version-tag { font-size: 11px; color: var(--text-muted); }
+#app-header .inbox-btn-wrap { margin-left: auto; }
+
+/* Pages need top padding for fixed header (except login/denied/session) */
+.page:not(#login-page):not(#access-denied-page):not(#session-page) { padding-top: 68px; }
+
+#login-page { text-align: center; max-width: 400px; padding-top: 120px; }
 #login-page h1 { font-size: 2rem; }
 #login-page p { color: var(--text-dim); margin-bottom: 24px; }
 
@@ -97,7 +112,8 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 /* ===== SESSION PAGE — full-viewport layout ===== */
 #session-page {
   flex-direction: column;
-  height: 100dvh; max-width: none; padding: 0;
+  height: calc(100dvh - 48px); max-width: none; padding: 0;
+  margin-top: 48px;
 }
 #session-page.active { display: flex; }
 
@@ -410,7 +426,7 @@ select {
 }
 
 @media (max-width: 600px) {
-  .page { padding: 12px; }
+  .page:not(#login-page):not(#access-denied-page):not(#session-page) { padding: 12px; padding-top: 60px; }
   #login-page { padding-top: 80px; }
   #map { height: 50vh; }
   #session-page { padding: 0; }

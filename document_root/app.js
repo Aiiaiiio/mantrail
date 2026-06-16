@@ -127,6 +127,7 @@ const App = {
   searchPolyline: null,
   assignedPolyline: null,
   membersData: {},
+  _navHistory: [],
   locationWatchId: null,
   locationInterval: null,
   trackedWaypoints: [],
@@ -189,22 +190,23 @@ const App = {
       API.getAllowlist().then(r => this.renderAllowlist(r.entries)).catch(() => {});
       this.renderInviteTokens();
     } else if (page === 'settings') {
-      const sel = document.getElementById('settings-language-select');
-      if (sel) sel.value = I18n.locale;
-      const themeSel = document.getElementById('settings-theme-select');
-      if (themeSel) themeSel.value = this.theme;
-      // Sync custom dropdown triggers after value changes
-      this._initCustomDropdowns();
-      const card = document.getElementById('settings-access-card');
-      if (card) card.style.display = this.currentUser?.can_invite ? '' : 'none';
+      this.renderSettingsPage();
     } else if (page === 'notifications') {
-      this._updateInboxBadge();
+      this.renderNotificationsPage();
     }
   },
 
-  nav(page, params) {
+  nav(page, params, { replace } = {}) {
+    if (!replace && this.currentPage && this.currentPage !== page) {
+      this._navHistory.push({ page: this.currentPage, params: this.currentPageParams });
+    }
     this.currentPage = page;
     this.currentPageParams = params;
+
+    // Prune history top if it matches the page we just landed on (redundant entry)
+    while (this._navHistory.length > 0 && this._navHistory[this._navHistory.length - 1].page === page) {
+      this._navHistory.pop();
+    }
 
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const el = document.getElementById(`${page}-page`);
@@ -247,6 +249,19 @@ const App = {
         this.renderNotificationsPage();
         break;
     }
+
+    // Show/hide global header
+    const header = document.getElementById('app-header');
+    if (header) {
+      const noHeader = ['login', 'access-denied'];
+      header.style.display = noHeader.includes(page) ? 'none' : 'flex';
+    }
+    if (this.currentUser && !['login', 'access-denied'].includes(page)) {
+      const hn = document.getElementById('header-user-name');
+      if (hn) hn.textContent = this.currentUser?.name || '';
+      const vt = document.getElementById('header-version-tag');
+      if (vt) vt.textContent = this.appVersion ? `v${this.appVersion}` : '';
+    }
   },
 
   showSnackbar(msg) {
@@ -254,6 +269,15 @@ const App = {
     el.textContent = msg;
     el.classList.add('show');
     setTimeout(() => el.classList.remove('show'), 3000);
+  },
+
+  goBack() {
+    const entry = this._navHistory.pop();
+    if (entry) {
+      this.nav(entry.page, entry.params, { replace: true });
+    } else {
+      this.nav('dashboard', undefined, { replace: true });
+    }
   },
 
   // ========== LOGIN ==========
@@ -355,9 +379,6 @@ const App = {
   async renderDashboard() {
     const list = document.getElementById('session-list');
     list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
-
-    document.getElementById('user-name').textContent = this.currentUser?.name || '';
-    document.getElementById('version-tag').textContent = this.appVersion ? `v${this.appVersion}` : '';
 
     document.getElementById('create-session-btn').onclick = () => {
       const name = prompt(I18n.t('dashboard.sessionName'));
@@ -511,7 +532,7 @@ const App = {
       }
     };
 
-    document.getElementById('back-from-settings-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('back-from-settings-btn').onclick = () => this.goBack();
 
     this._initCustomDropdowns();
   },
@@ -566,7 +587,7 @@ const App = {
 
   // ========== ACCESS MANAGEMENT ==========
   async renderAccessManagementPage() {
-    document.getElementById('back-from-access-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('back-from-access-btn').onclick = () => this.goBack();
 
     try {
       const res = await API.getAllowlist();
@@ -735,7 +756,7 @@ const App = {
     document.getElementById('back-to-dashboard').onclick = () => {
       this.cleanupSession();
       WS.disconnect();
-      this.nav('dashboard');
+      this.goBack();
     };
 
     document.getElementById('copy-code-btn').onclick = () => {
@@ -1470,7 +1491,7 @@ const App = {
         html += '</div>';
       }
 
-      html += `<button class="btn btn-secondary" onclick="App.nav('dashboard')">${I18n.t('summary.backToDashboard')}</button>`;
+      html += `<button class="btn btn-secondary" onclick="App.goBack()">${I18n.t('summary.backToDashboard')}</button>`;
 
       container.innerHTML = html;
 
@@ -1526,7 +1547,7 @@ const App = {
 
   // ========== LOG LIST (My Log) ==========
   async renderLog() {
-    document.getElementById('back-from-log-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('back-from-log-btn').onclick = () => this.goBack();
     document.getElementById('new-log-entry-btn').onclick = () => {
       this.nav('log-entry', { prefill: null });
     };
@@ -1588,7 +1609,7 @@ const App = {
 
   // ========== LOG VIEWER (admin only) ==========
   async renderLogViewer() {
-    document.getElementById('back-from-viewer-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('back-from-viewer-btn').onclick = () => this.goBack();
 
     const filterBar = document.getElementById('viewer-filter-bar');
     filterBar.style.display = '';
@@ -1698,7 +1719,7 @@ const App = {
   },
 
   async renderNotificationsPage() {
-    document.getElementById('back-from-notifications-btn').onclick = () => this.nav('dashboard');
+    document.getElementById('back-from-notifications-btn').onclick = () => this.goBack();
     document.getElementById('mark-all-notifications-read-btn').onclick = async () => {
       try {
         await API.markAllNotificationsRead();
@@ -1838,8 +1859,7 @@ const App = {
     const container = document.getElementById('log-detail-content');
     container.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
 
-    const returnTo = this.currentPageParams?.from || 'log';
-    document.getElementById('back-from-detail-btn').onclick = () => this.nav(returnTo);
+    document.getElementById('back-from-detail-btn').onclick = () => this.goBack();
 
     try {
       const res = await API.getLogEntry(id);
@@ -1897,7 +1917,7 @@ const App = {
         html += `<div id="detail-map" style="height:300px;border-radius:12px;margin-bottom:16px"></div>`;
       }
 
-      html += `<button class="btn btn-secondary" onclick="App.nav('log')">${I18n.t('summary.backToLog')}</button>`;
+      html += `<button class="btn btn-secondary" onclick="App.goBack()">${I18n.t('summary.backToLog')}</button>`;
 
       container.innerHTML = html;
 
@@ -1929,7 +1949,7 @@ const App = {
     try {
       await API.deleteLogEntry(id);
       this.showSnackbar(I18n.t('log.entryDeleted'));
-      this.nav(this.currentPageParams?.from || 'log');
+      this.nav(this.currentPageParams?.from || 'log', undefined, { replace: true });
     } catch (e) {
       this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
@@ -1943,7 +1963,7 @@ const App = {
     const prefill = params.prefill || {};
 
     document.getElementById('log-entry-title').textContent = isEdit ? I18n.t('logEntry.editTitle') : I18n.t('logEntry.newTitle');
-    document.getElementById('cancel-log-entry-btn').onclick = () => this.nav('log');
+    document.getElementById('cancel-log-entry-btn').onclick = () => this.nav('log', undefined, { replace: true });
 
     const deleteBtn = document.getElementById('delete-log-entry-btn');
     deleteBtn.style.display = isEdit ? '' : 'none';
@@ -2145,7 +2165,7 @@ const App = {
       }
       this.logEntryPrefill = null;
       this.logEntryEditId = null;
-      this.nav('log');
+      this.nav('log', undefined, { replace: true });
     } catch (e) {
       this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
     }
