@@ -208,6 +208,8 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .top-bar .top-bar-right { display: flex; align-items: center; gap: 8px; font-size: 14px; justify-content: flex-end; }
 .top-bar .top-bar-left { display: flex; align-items: center; gap: 8px; }
 .top-bar .top-bar-left .btn { min-height: 48px; padding: 10px 16px; flex: 1; justify-content: center; }
+.session-card { display: flex; flex-direction: column; }
+.session-card .btn { align-self: flex-end; }
 .top-bar .avatar { width: 32px; height: 32px; border-radius: 50%; }
 .top-bar > .btn { align-self: flex-start; }
 select {
