@@ -108,7 +108,7 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .header-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; flex-shrink: 0; }
 
 /* Pages need top padding for fixed header (except login/denied/session) */
-.page:not(#login-page):not(#access-denied-page):not(#session-page) { padding-top: 100px; }
+.page:not(#login-page):not(#access-denied-page):not(#session-page) { padding-top: 118px; }
 
 #login-page { text-align: center; max-width: 400px; padding-top: 120px; }
 #login-page h1 { font-size: 2rem; }
@@ -119,8 +119,8 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 /* ===== SESSION PAGE — full-viewport layout ===== */
 #session-page {
   flex-direction: column;
-  height: calc(100dvh - 48px); max-width: none; padding: 0;
-  margin-top: 48px;
+  height: calc(100dvh - 118px); max-width: none; padding: 0;
+  margin-top: 118px;
 }
 #session-page.active { display: flex; }
 
@@ -441,10 +441,10 @@ select {
 @media (max-width: 600px) {
   #app-header { padding: 4px 8px; gap: 1px; }
   #header-user-name { max-width: 100px; }
-  .page:not(#login-page):not(#access-denied-page):not(#session-page) { padding: 12px; padding-top: 88px; }
+  .page:not(#login-page):not(#access-denied-page):not(#session-page) { padding: 12px; padding-top: 113px; }
   #login-page { padding-top: 80px; }
   #map { height: 50vh; }
-  #session-page { padding: 0; }
+  #session-page { padding: 0; margin-top: 113px; height: calc(100dvh - 113px); }
   .session-header { padding: 10px 12px; }
   .session-title { font-size: 1.1rem; }
   .session-code-row { font-size: 12px; }
