@@ -119,6 +119,9 @@ const q = {
   markAllNotificationsRead: db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?'),
   findAdminUserIds: db.prepare(`SELECT u.id FROM users u INNER JOIN allowed_emails ae ON ae.email = u.email WHERE ae.can_invite = 1`),
   findAllUserIds: db.prepare('SELECT id FROM users'),
+  findAllLogEntries: db.prepare(`SELECT le.*, u.name as user_name
+    FROM log_entries le INNER JOIN users u ON u.id = le.user_id
+    ORDER BY le.created_at DESC`),
 };
 
 function findLogEntriesByUserIds(userIds) {

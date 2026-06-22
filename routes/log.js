@@ -15,6 +15,10 @@ router.get('/', (req, res) => {
     const entries = findLogEntriesByUserIds(ids);
     return res.json({ entries });
   }
+  if (canInvite(req.user.userId)) {
+    const entries = q.findAllLogEntries.all();
+    return res.json({ entries });
+  }
   const entries = q.findLogEntries.all(req.user.userId);
   res.json({ entries });
 });
