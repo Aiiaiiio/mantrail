@@ -195,7 +195,8 @@
     "99": "Thunderstorm with heavy hail"
   },
   "dogs": {
-    "error": "Error: {message}"
+    "error": "Error: {message}",
+    "confirmRemove": "Remove {name}?"
   },
   "errors": {
     "generic": "Error: {message}",

@@ -195,7 +195,8 @@
     "99": "Zivatar heves jégesővel"
   },
   "dogs": {
-    "error": "Hiba: {message}"
+    "error": "Hiba: {message}",
+    "confirmRemove": "Biztosan eltávolítod ezt a kutyát: {name}?"
   },
   "errors": {
     "generic": "Hiba: {message}",

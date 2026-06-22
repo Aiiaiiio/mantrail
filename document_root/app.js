@@ -374,11 +374,17 @@ const App = {
       list.innerHTML = dogs.map(d => `
         <div class="dog-item">
           <span>${d.name}</span>
-          <button class="btn btn-sm btn-danger" onclick="App.deleteDog('${d.id}')">${I18n.t('dashboard.remove')}</button>
+          <button class="btn btn-sm btn-danger" title="${I18n.t('dashboard.remove')}" onclick="App.confirmDeleteDog('${d.id}','${d.name.replace(/'/g, '\\\\\'')}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
       `).join('');
     } catch (e) {
       list.innerHTML = `<div class="empty-state" style="padding:12px;font-size:13px">${I18n.t('dogs.error', { message: e.message })}</div>`;
+    }
+  },
+
+  confirmDeleteDog(id, name) {
+    if (confirm(I18n.t('dogs.confirmRemove', { name }))) {
+      this.deleteDog(id);
     }
   },
 
