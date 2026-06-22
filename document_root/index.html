@@ -16,15 +16,24 @@
 
     <!-- GLOBAL HEADER -->
     <div id="app-header" style="display:none">
-      <span id="header-user-name"></span>
-      <span id="header-version-tag"></span>
-      <span id="header-git-info" class="header-git-info"></span>
-      <span class="inbox-btn-wrap" style="margin-left:auto">
-        <button class="btn-icon" id="inbox-btn">&#128276;</button>
-        <span id="inbox-unread-dot" class="unread-dot" style="display:none"></span>
-      </span>
-      <button class="btn-icon" id="settings-btn" title="Settings">&#9881;</button>
-      <button class="btn btn-sm btn-secondary" id="logout-btn" data-i18n="dashboard.signOut">Sign Out</button>
+      <div class="header-row">
+        <button class="btn-icon" id="home-btn">&#x2B1C;</button>
+        <span class="header-version-group">
+          <span id="header-version-tag"></span>
+          <span id="header-git-info" class="header-git-info"></span>
+        </span>
+      </div>
+      <div class="header-row">
+        <span id="header-user-name"></span>
+        <div class="header-actions">
+          <span class="inbox-btn-wrap">
+            <button class="btn-icon" id="inbox-btn" title="Notifications">&#128276;</button>
+            <span id="inbox-unread-dot" class="unread-dot" style="display:none"></span>
+          </span>
+          <button class="btn-icon" id="settings-btn" title="Settings">&#9881;</button>
+          <button class="btn-icon" id="logout-btn" title="Sign Out">&#x23FB;</button>
+        </div>
+      </div>
     </div>
 
     <!-- LOGIN -->

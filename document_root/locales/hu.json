@@ -13,6 +13,7 @@
   "dashboard": {
     "sessions": "Munkamenetek",
     "signOut": "Kijelentkezés",
+    "confirmSignOut": "Biztosan ki szeretnél jelentkezni?",
     "newSession": "+ Új munkamenet",
     "joinWithCode": "Csatlakozás kóddal",
     "myLog": "Naplóm",

@@ -272,6 +272,11 @@ const App = {
           gi.textContent = '';
         }
       }
+      const home = document.getElementById('home-btn');
+      if (home && !home._wired) {
+        home._wired = true;
+        home.onclick = () => this.nav('dashboard');
+      }
     }
   },
 
@@ -430,7 +435,9 @@ const App = {
     }
 
     document.getElementById('settings-btn').onclick = () => this.nav('settings');
-    document.getElementById('logout-btn').onclick = () => this.logout();
+    document.getElementById('logout-btn').onclick = () => {
+      if (confirm(I18n.t('dashboard.confirmSignOut'))) this.logout();
+    };
 
     document.getElementById('inbox-btn').onclick = () => this.nav('notifications');
     this._updateInboxBadge();
