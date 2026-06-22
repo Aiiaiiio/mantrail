@@ -284,10 +284,11 @@ select {
 }
 
 .dog-item {
-  display: flex; align-items: center; gap: 8px; justify-content: space-between;
-  padding: 8px 0; border-bottom: 1px solid var(--dog-border); font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
 }
 .dog-item:last-child { border-bottom: none; }
+.dog-item .btn-danger { font-size: 16px; padding: 6px 14px; }
 
 .log-entry-card { cursor: default; }
 .log-entry-header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
