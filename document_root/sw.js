@@ -12,8 +12,6 @@ const PRECACHE_URLS = [
   '/locales/en.json',
   '/locales/hu.json',
   '/img/app-icon.png',
-  '/img/icon-192.png',
-  '/img/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
