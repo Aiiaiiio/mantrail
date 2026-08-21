@@ -104,9 +104,12 @@ const API = {
   deleteDog(id) { return this.del(`/api/dogs/${id}`); },
 
   // Log
-  getLogEntries(userIds) {
-    const params = userIds && userIds.length ? `?userIds=${userIds.join(',')}` : '';
-    return this.get(`/api/log${params}`);
+  getLogEntries(userIds, { all } = {}) {
+    const params = [];
+    if (userIds && userIds.length) params.push(`userIds=${userIds.join(',')}`);
+    if (all) params.push('all=1');
+    const qs = params.length ? `?${params.join('&')}` : '';
+    return this.get(`/api/log${qs}`);
   },
   getLogEntry(id) { return this.get(`/api/log/${id}`); },
   createLogEntry(data) { return this.post('/api/log', data); },

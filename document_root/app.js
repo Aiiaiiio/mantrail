@@ -1701,7 +1701,7 @@ const App = {
     const list = document.getElementById('log-viewer-entries');
     list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
     try {
-      const res = await API.getLogEntries(this.viewerFilterUserIds);
+      const res = await API.getLogEntries(this.viewerFilterUserIds, { all: !this.viewerFilterUserIds });
       this._renderLogEntries(res.entries, 'log-viewer-entries', true);
     } catch (e) {
       list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;

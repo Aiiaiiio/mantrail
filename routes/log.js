@@ -7,7 +7,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', (req, res) => {
-  const { userIds } = req.query;
+  const { userIds, all } = req.query;
   if (userIds) {
     if (!canInvite(req.user.userId)) return res.status(403).json({ error: 'Not authorized' });
     const ids = userIds.split(',').filter(Boolean);
@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
     const entries = findLogEntriesByUserIds(ids);
     return res.json({ entries });
   }
-  if (canInvite(req.user.userId)) {
+  if (all === '1' && canInvite(req.user.userId)) {
     const entries = q.findAllLogEntries.all();
     return res.json({ entries });
   }
