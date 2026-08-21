@@ -81,6 +81,26 @@ h2 { font-size: 1.2rem; margin-bottom: 12px; }
 .card h3 { font-size: 1rem; margin-bottom: 4px; }
 .card .meta { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
 
+/* ===== METRO DASHBOARD ===== */
+.metro-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+}
+.metro-card {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+  gap: 12px; min-height: 120px; padding: 14px;
+  border: none; border-radius: 12px; color: #fff;
+  font-size: 15px; font-weight: 600; text-align: left;
+  cursor: pointer; transition: filter 0.15s, transform 0.05s;
+}
+.metro-card:hover { filter: brightness(1.1); }
+.metro-card:active { transform: scale(0.98); }
+.metro-icon { font-size: 30px; line-height: 1; }
+.metro-card-admin {
+  background-image: repeating-linear-gradient(45deg,
+    rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 8px,
+    transparent 8px, transparent 16px);
+}
+
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-secondary); }
 .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input-bg); color: var(--text); }
@@ -441,6 +461,7 @@ select {
 @media (max-width: 600px) {
   #app-header { padding: 4px 8px; gap: 1px; }
   #header-user-name { max-width: 100px; }
+  .metro-card { min-height: 100px; }
   .page:not(#login-page):not(#access-denied-page):not(#session-page) { padding: 12px; padding-top: 113px; }
   #login-page { padding-top: 80px; }
   #map { height: 50vh; }

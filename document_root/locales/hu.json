@@ -2,7 +2,8 @@
   "app": {
     "title": "Mantrail Tracker",
     "tagline": "Valós idejű mantrailing munkamenet-kezelés",
-    "loading": "Betöltés..."
+    "loading": "Betöltés...",
+    "back": "Vissza"
   },
   "login": {
     "signInWithGoogle": "Bejelentkezés Google-lel",

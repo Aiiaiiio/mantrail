@@ -2,7 +2,8 @@
   "app": {
     "title": "Mantrail Tracker",
     "tagline": "Real-time mantrailing session management",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "back": "Back"
   },
   "login": {
     "signInWithGoogle": "Sign in with Google",

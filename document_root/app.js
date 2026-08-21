@@ -184,8 +184,10 @@ const App = {
 
   onLocaleChange() {
     const page = this.currentPage;
-    if (page === 'dashboard') {
+    if (page === 'sessions') {
       this.renderSessionList();
+    } else if (page === 'dogs') {
+      this.renderDogs();
     } else if (page === 'session' && this.currentSession) {
       this.updateSessionUI();
     } else if (page === 'access-management') {
@@ -220,6 +222,12 @@ const App = {
         break;
       case 'dashboard':
         this.renderDashboard();
+        break;
+      case 'sessions':
+        this.renderSessionsPage();
+        break;
+      case 'dogs':
+        this.renderDogsPage();
         break;
       case 'session':
         this.enterSession(params.id);
@@ -277,6 +285,27 @@ const App = {
         home._wired = true;
         home.onclick = () => this.nav('dashboard');
       }
+      this._wireHeaderButtons();
+    }
+  },
+
+  _wireHeaderButtons() {
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn && !settingsBtn._wired) {
+      settingsBtn._wired = true;
+      settingsBtn.onclick = () => this.nav('settings');
+    }
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn && !logoutBtn._wired) {
+      logoutBtn._wired = true;
+      logoutBtn.onclick = () => {
+        if (confirm(I18n.t('dashboard.confirmSignOut'))) this.logout();
+      };
+    }
+    const inboxBtn = document.getElementById('inbox-btn');
+    if (inboxBtn && !inboxBtn._wired) {
+      inboxBtn._wired = true;
+      inboxBtn.onclick = () => this.nav('notifications');
     }
   },
 
@@ -398,9 +427,29 @@ const App = {
   },
 
   // ========== DASHBOARD ==========
-  async renderDashboard() {
-    const list = document.getElementById('session-list');
-    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
+  renderDashboard() {
+    document.getElementById('nav-sessions-card').onclick = () => this.nav('sessions');
+    document.getElementById('nav-log-card').onclick = () => this.nav('log');
+    document.getElementById('nav-dogs-card').onclick = () => this.nav('dogs');
+
+    const viewerCard = document.getElementById('nav-log-viewer-card');
+    const accessCard = document.getElementById('nav-access-card');
+    if (this.currentUser?.can_invite) {
+      viewerCard.style.display = '';
+      viewerCard.onclick = () => this.nav('log-viewer');
+      accessCard.style.display = '';
+      accessCard.onclick = () => this.nav('access-management');
+    } else {
+      viewerCard.style.display = 'none';
+      accessCard.style.display = 'none';
+    }
+
+    this._updateInboxBadge();
+  },
+
+  // ========== SESSIONS PAGE ==========
+  async renderSessionsPage() {
+    document.getElementById('back-from-sessions-btn').onclick = () => this.goBack();
 
     document.getElementById('create-session-btn').onclick = () => {
       const name = prompt(I18n.t('dashboard.sessionName'));
@@ -420,33 +469,20 @@ const App = {
       }
     };
 
-    document.getElementById('open-log-btn').onclick = () => {
-      this.nav('log');
-    };
-
-    const logViewerBtn = document.getElementById('open-log-viewer-btn');
-    if (this.currentUser?.can_invite) {
-      logViewerBtn.style.display = '';
-      logViewerBtn.onclick = () => this.nav('log-viewer');
-    } else {
-      logViewerBtn.style.display = 'none';
+    const list = document.getElementById('session-list');
+    list.innerHTML = `<div class="empty-state">${I18n.t('app.loading')}</div>`;
+    try {
+      const res = await API.getSessions();
+      this.cachedSessions = res.sessions;
+      this.renderSessionList();
+    } catch (e) {
+      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
     }
+  },
 
-    const manageBtn = document.getElementById('manage-access-btn');
-    if (this.currentUser?.can_invite) {
-      manageBtn.style.display = '';
-      manageBtn.onclick = () => this.nav('access-management');
-    } else {
-      manageBtn.style.display = 'none';
-    }
-
-    document.getElementById('settings-btn').onclick = () => this.nav('settings');
-    document.getElementById('logout-btn').onclick = () => {
-      if (confirm(I18n.t('dashboard.confirmSignOut'))) this.logout();
-    };
-
-    document.getElementById('inbox-btn').onclick = () => this.nav('notifications');
-    this._updateInboxBadge();
+  // ========== DOGS PAGE ==========
+  async renderDogsPage() {
+    document.getElementById('back-from-dogs-btn').onclick = () => this.goBack();
 
     document.getElementById('add-dog-btn').onclick = async () => {
       const input = document.getElementById('new-dog-name');
@@ -455,21 +491,13 @@ const App = {
       try {
         await API.addDog(name);
         input.value = '';
-    this.renderDogs();
+        this.renderDogs();
       } catch (e) {
         this.showSnackbar(I18n.t('errors.generic', { message: e.message }));
       }
     };
 
     this.renderDogs();
-
-    try {
-      const res = await API.getSessions();
-      this.cachedSessions = res.sessions;
-      this.renderSessionList();
-    } catch (e) {
-      list.innerHTML = `<div class="empty-state">${I18n.t('errors.generic', { message: e.message })}</div>`;
-    }
   },
 
   renderSessionList() {

@@ -46,34 +46,59 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard-page" class="page">
+      <div class="metro-grid">
+        <button class="metro-card" id="nav-log-card" style="background-color:#2e8b6e">
+          <span class="metro-icon">&#128214;</span>
+          <span data-i18n="dashboard.myLog">My Log</span>
+        </button>
+        <button class="metro-card" id="nav-sessions-card" style="background-color:#4a7fb3">
+          <span class="metro-icon">&#128205;</span>
+          <span data-i18n="dashboard.sessions">Sessions</span>
+        </button>
+        <button class="metro-card" id="nav-dogs-card" style="background-color:#c97a3d">
+          <span class="metro-icon">&#128021;</span>
+          <span data-i18n="dashboard.myDogs">My Dogs</span>
+        </button>
+        <button class="metro-card metro-card-admin" id="nav-log-viewer-card" style="display:none;background-color:#7a5fa0">
+          <span class="metro-icon">&#128269;</span>
+          <span data-i18n="dashboard.logViewer">Log Viewer</span>
+        </button>
+        <button class="metro-card metro-card-admin" id="nav-access-card" style="display:none;background-color:#5a6b7d">
+          <span class="metro-icon">&#128273;</span>
+          <span data-i18n="access.manageAccess">Manage Access</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SESSIONS -->
+    <div id="sessions-page" class="page">
       <div class="top-bar">
-        <div class="top-bar-left">
-          <button class="btn btn-secondary btn-sm" id="open-log-btn" data-i18n="dashboard.myLog">My Log</button>
-          <button class="btn btn-secondary btn-sm" id="open-log-viewer-btn" style="display:none" data-i18n="dashboard.logViewer">Log Viewer</button>
-          <button class="btn btn-secondary btn-sm" id="manage-access-btn" style="display:none" data-i18n="access.manageAccess">Manage Access</button>
-        </div>
+        <h1 data-i18n="dashboard.sessions">Sessions</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-sessions-btn" data-i18n="app.back">Back</button>
       </div>
 
       <div class="card" style="margin-bottom:16px">
-        <h2 data-i18n="dashboard.sessions">Sessions</h2>
         <div class="row" style="margin-bottom:12px">
           <button class="btn" id="create-session-btn" data-i18n="dashboard.newSession">+ New Session</button>
           <button class="btn btn-secondary" id="join-session-btn" data-i18n="dashboard.joinWithCode">Join with Code</button>
         </div>
         <div id="session-list"></div>
       </div>
+    </div>
 
-      <hr style="margin:20px 0" />
+    <!-- DOGS -->
+    <div id="dogs-page" class="page">
+      <div class="top-bar">
+        <h1 data-i18n="dashboard.myDogs">My Dogs</h1>
+        <button class="btn btn-sm btn-secondary" id="back-from-dogs-btn" data-i18n="app.back">Back</button>
+      </div>
 
       <div class="card" style="margin-bottom:16px">
-        <h2 data-i18n="dashboard.myDogs">My Dogs</h2>
-        <div id="dogs-section">
-          <div class="row" style="margin-bottom:12px">
-            <input type="text" id="new-dog-name" data-i18n="dashboard.dogName" placeholder="Dog name" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--input-bg);color:var(--text)" />
-            <button class="btn btn-sm" id="add-dog-btn" data-i18n="dashboard.addDog">Add Dog</button>
-          </div>
-          <div id="dogs-list"></div>
+        <div class="row" style="margin-bottom:12px">
+          <input type="text" id="new-dog-name" data-i18n="dashboard.dogName" placeholder="Dog name" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:var(--input-bg);color:var(--text)" />
+          <button class="btn btn-sm" id="add-dog-btn" data-i18n="dashboard.addDog">Add Dog</button>
         </div>
+        <div id="dogs-list"></div>
       </div>
     </div>
 
