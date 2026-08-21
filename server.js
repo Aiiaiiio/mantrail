@@ -36,12 +36,17 @@ app.use((req, res, next) => {
   });
 });
 
-const options = {
-  key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),
-  cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')),
-};
-
-const server = https.createServer(options, app);
+const USE_HTTP = process.env.USE_HTTP === '1';
+let server;
+if (USE_HTTP) {
+  server = require('http').createServer(app);
+} else {
+  const options = {
+    key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')),
+  };
+  server = https.createServer(options, app);
+}
 
 setupWebSocket(server);
 
@@ -62,5 +67,5 @@ cleanupOldSessions();
 
 const PORT = process.env.PORT || 22334;
 server.listen(PORT, () => {
-  console.log(`Server running on https://0.0.0.0:${PORT}`);
+  console.log(`Server running on ${USE_HTTP ? 'http' : 'https'}://0.0.0.0:${PORT}`);
 });

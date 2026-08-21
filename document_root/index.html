@@ -410,7 +410,7 @@
   <script src="user-selector.js"></script>
   <script src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && window.isSecureContext) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err =>
           console.error('Service worker registration failed:', err)
