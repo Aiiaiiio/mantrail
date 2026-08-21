@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="app.title">Mantrail Tracker</title>
   <link rel="icon" type="image/png" href="img/app-icon.png">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f5">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121218">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -405,5 +409,14 @@
   <script src="ws.js"></script>
   <script src="user-selector.js"></script>
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err =>
+          console.error('Service worker registration failed:', err)
+        );
+      });
+    }
+  </script>
 </body>
 </html>

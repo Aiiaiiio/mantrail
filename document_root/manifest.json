@@ -1,0 +1,31 @@
+{
+  "name": "Mantrail Tracker",
+  "short_name": "Mantrail",
+  "description": "Real-time mantrailing session management",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f5f5",
+  "theme_color": "#4a7fb3",
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
